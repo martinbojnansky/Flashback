@@ -18,8 +18,8 @@ export class AudioStepViewComponent {
     if (file) {
       console.log('STARTED', file);
       this.onsetsService.splitFile(file).subscribe({
-        next: (slices) => {
-          console.log('COMPLETED', slices);
+        next: (files) => {
+          console.log('COMPLETED', files);
         },
       });
     }

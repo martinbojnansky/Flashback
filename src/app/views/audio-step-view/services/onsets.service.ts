@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-// import audioEncoder from 'audio-encoder';
-import { from, map } from 'rxjs';
+import audioEncoder from 'audio-encoder';
+import { from, map, switchMap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -19,8 +19,9 @@ export class OnsetsService {
   }
 
   splitFile(file: File) {
-    return from(this.split(file));
-    //.pipe(map((res) => from(this.encode(res))))
+    return from(this.split(file)).pipe(
+      switchMap((res) => from(this.encode(res)))
+    );
   }
 
   private async split(file: File) {
@@ -63,35 +64,35 @@ export class OnsetsService {
     return promise;
   }
 
-  // private async encode(result: { sampleRate: number; slices: any[] }) {
-  //   let resampledSlices = [];
+  private async encode(result: { sampleRate: number; slices: any[] }) {
+    let resampledSlices: AudioBuffer[] = [];
 
-  //   for (let i = 0; i < result.slices.length; i++) {
-  //     let buffer = this.audioCtx.createBuffer(
-  //       1,
-  //       result.slices[i].length,
-  //       result.sampleRate
-  //     );
-  //     let data = buffer.getChannelData(0);
-  //     for (let j = 0; j < result.slices[i].length; j++)
-  //       data[j] = result.slices[i][j];
-  //     let resampledBuffer = await this.resample(buffer, 44100); // audioEncoder only supports 44100hz sampling rate
-  //     resampledSlices.push(resampledBuffer);
-  //   }
+    for (let i = 0; i < result.slices.length; i++) {
+      let buffer = this.audioCtx.createBuffer(
+        1,
+        result.slices[i].length,
+        result.sampleRate
+      );
+      let data = buffer.getChannelData(0);
+      for (let j = 0; j < result.slices[i].length; j++)
+        data[j] = result.slices[i][j];
+      let resampledBuffer: AudioBuffer = await this.resample(buffer, 44100); // audioEncoder only supports 44100hz sampling rate
+      resampledSlices.push(resampledBuffer);
+    }
 
-  //   let blobs = resampledSlices.map((sliceBuffer) => {
-  //     return audioEncoder(sliceBuffer, 128, null, null);
-  //   });
+    let blobs = resampledSlices.map((sliceBuffer) => {
+      return audioEncoder(sliceBuffer, 'WAV', null, null);
+    });
 
-  //   let encodedSlices = blobs.map((b, idx) => {
-  //     return {
-  //       name: `${idx.toFixed(4)}.mp3`,
-  //       blob: b,
-  //     };
-  //   });
+    let encodedSlices = blobs.map((b, idx) => {
+      return {
+        name: `${idx}.wav`,
+        blob: b,
+      };
+    });
 
-  //   return encodedSlices;
-  // }
+    return encodedSlices;
+  }
 
   private async decodeBuffer(arrayBuffer: ArrayBuffer) {
     return new Promise<AudioBuffer>((resolve, reject) => {
