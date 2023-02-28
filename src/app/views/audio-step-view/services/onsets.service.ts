@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import audioEncoder from 'audio-encoder';
-import { from, map, switchMap } from 'rxjs';
+// @ts-ignore
+import { from, switchMap } from 'rxjs';
+import { simpleMp3 } from 'simple-mp3';
 
 @Injectable({
   providedIn: 'root',
@@ -65,7 +66,7 @@ export class OnsetsService {
   }
 
   private async encode(result: { sampleRate: number; slices: any[] }) {
-    let resampledSlices: AudioBuffer[] = [];
+    const buffers: AudioBuffer[] = [];
 
     for (let i = 0; i < result.slices.length; i++) {
       let buffer = this.audioCtx.createBuffer(
@@ -76,22 +77,24 @@ export class OnsetsService {
       let data = buffer.getChannelData(0);
       for (let j = 0; j < result.slices[i].length; j++)
         data[j] = result.slices[i][j];
-      let resampledBuffer: AudioBuffer = await this.resample(buffer, 44100); // audioEncoder only supports 44100hz sampling rate
-      resampledSlices.push(resampledBuffer);
+      buffers.push(buffer);
     }
 
-    let blobs = resampledSlices.map((sliceBuffer) => {
-      return audioEncoder(sliceBuffer, 'WAV', null, null);
+    let slices = buffers.map((sliceBuffer) => {
+      const numberOfChannels = sliceBuffer.numberOfChannels;
+      const channelData: Float32Array[] = [];
+      for (let i = 0; i < numberOfChannels; ++i) {
+        channelData.push(sliceBuffer.getChannelData(i));
+      }
+      // TODO: Try to use FFmpeg 'ffmpeg -i input.raw -acodec libmp3 output.mp3'
+      const mp3Data = simpleMp3({
+        channelData,
+        sampleRate: sliceBuffer.sampleRate,
+      });
+      return URL.createObjectURL(new Blob(mp3Data, { type: 'audio/mpeg' }));
     });
 
-    let encodedSlices = blobs.map((b, idx) => {
-      return {
-        name: `${idx}.wav`,
-        blob: b,
-      };
-    });
-
-    return encodedSlices;
+    return slices;
   }
 
   private async decodeBuffer(arrayBuffer: ArrayBuffer) {

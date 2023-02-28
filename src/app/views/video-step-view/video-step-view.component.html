@@ -1,6 +1,10 @@
-<span>
+<h1>Video</h1>
+
+<div>
   <label>Select file:</label>
   <input type="file" (change)="selectFile($event)" />
-</span>
+</div>
+
 <video #player [src]="src$ | async" autoplay loop controls></video>
+
 <a routerLink="/audio">Previous</a>

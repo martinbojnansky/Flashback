@@ -1,5 +1,8 @@
+import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
+import { Subject } from 'rxjs';
 import { OnsetsService } from './services/onsets.service';
 
 @Component({
@@ -8,10 +11,15 @@ import { OnsetsService } from './services/onsets.service';
   styleUrls: ['./audio-step-view.component.scss'],
   standalone: true,
   providers: [OnsetsService],
-  imports: [RouterModule],
+  imports: [CommonModule, RouterModule],
 })
 export class AudioStepViewComponent {
-  constructor(protected onsetsService: OnsetsService) {}
+  constructor(
+    protected onsetsService: OnsetsService,
+    protected sanitizer: DomSanitizer
+  ) {}
+
+  readonly srcs$ = new Subject<SafeUrl[]>();
 
   async selectFile(event: Event) {
     const file: File = (event.target as EventTarget & { files: FileList })
@@ -20,8 +28,11 @@ export class AudioStepViewComponent {
     if (file) {
       console.log('STARTED', file);
       this.onsetsService.splitFile(file).subscribe({
-        next: (files) => {
-          console.log('COMPLETED', files);
+        next: (urls) => {
+          console.log('COMPLETED', urls);
+          this.srcs$.next(
+            urls.map((url) => this.sanitizer.bypassSecurityTrustUrl(url))
+          );
         },
       });
     }

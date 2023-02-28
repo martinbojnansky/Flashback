@@ -1,8 +1,11 @@
 /// <reference lib="webworker" />
 
+// @ts-ignore
 import { Essentia, EssentiaWASM } from 'essentia.js';
+// @ts-ignore
 import { PolarFFTWASM } from '../lib/polarFFT.module.js';
-import { OnsetsWASM } from '../lib/onsets.module.js';
+// @ts-ignore
+import { OnsetsWASM } from '../lib/onsets.module.js'; // @ts-ignore
 
 let essentia: any = null;
 
@@ -51,42 +54,6 @@ addEventListener('message', ({ data }) => {
       console.info(params);
       break;
     }
-    // case 'updateParams': {
-    //   let [suppliedParamList, newParams] = checkParams(data.params);
-
-    //   params = { ...params, ...newParams }; // update existing params obj
-    //   log(`updated the following params: ${suppliedParamList.join(',')}`);
-    //   log('current params are: ');
-    //   console.info(params);
-
-    //   if (
-    //     suppliedParamList.length == 1 &&
-    //     suppliedParamList[0] == 'sampleRate'
-    //   ) {
-    //     // if only sample rate was updated, do not run any of the analysis
-    //     break;
-    //   }
-
-    //   if (polarFrames === null || polarFrames.length === 0) {
-    //     // file hasn't been uploaded and analysed for 1st time, or it has been cleared
-    //     computeFFT();
-    //   }
-    //   if (
-    //     suppliedParamList.includes('frameSize') ||
-    //     suppliedParamList.includes('hopSize')
-    //   ) {
-    //     // re-compute FFT analysis if updated params affect it (frame or hop size changed)
-    //     computeFFT();
-    //   }
-
-    //   onsetPositions = computeOnsets();
-    //   const slices = sliceAudio();
-    //   postMessage({
-    //     onsets: onsetPositions,
-    //     slices: slices,
-    //   });
-    //   break;
-    // }
     case 'slice': {
       if (!signal) {
         error('no audio signal available for slicing');
@@ -102,9 +69,6 @@ addEventListener('message', ({ data }) => {
       postMessage(slices);
       break;
     }
-    case 'clear':
-      // audio worker state and saved analysis should be cleared
-      break;
     default:
       error('Received message from main thread; no matching request found!');
       break;
