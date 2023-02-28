@@ -1,0 +1,18 @@
+<!-- <as-split direction="horizontal">
+  <as-split-area [size]="60"> -->
+<app-audio-picker (completed)="audioSlices$.next($event)"></app-audio-picker>
+<ng-container *ngIf="videos$ | async as videos">
+  <app-video-editor
+    *ngFor="let video of videos"
+    [audioSlices]="audioSlices$ | async"
+  ></app-video-editor>
+</ng-container>
+<button (click)="addVideo().subscribe()">Add video</button>
+<!--/as-split-area>
+  <<as-split-area [size]="40">
+    <as-split direction="vertical">
+      <as-split-area [size]="40"> Preview goes here </as-split-area>
+      <as-split-area [size]="60"> Library goes here </as-split-area>
+    </as-split>
+  </as-split-area>>
+</as-split-->

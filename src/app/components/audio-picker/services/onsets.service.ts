@@ -102,22 +102,4 @@ export class OnsetsService {
       this.audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
     });
   }
-
-  private async resample(
-    sourceAudioBuffer: AudioBuffer,
-    targetSampleRate: number
-  ) {
-    let offlineCtx = new OfflineAudioContext(
-      sourceAudioBuffer.numberOfChannels,
-      sourceAudioBuffer.duration * targetSampleRate,
-      targetSampleRate
-    );
-    // Play it from the beginning.
-    let offlineSource = offlineCtx.createBufferSource();
-    offlineSource.buffer = sourceAudioBuffer;
-    offlineSource.connect(offlineCtx.destination);
-    offlineSource.start();
-    let resampled = await offlineCtx.startRendering();
-    return resampled;
-  }
 }

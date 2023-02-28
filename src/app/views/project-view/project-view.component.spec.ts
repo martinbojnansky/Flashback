@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { VideoStepViewComponent } from './video-step-view.component';
+import { ProjectViewComponent } from './project-view.component';
 
-describe('VideoStepViewComponent', () => {
-  let component: VideoStepViewComponent;
-  let fixture: ComponentFixture<VideoStepViewComponent>;
+describe('ProjectViewComponent', () => {
+  let component: ProjectViewComponent;
+  let fixture: ComponentFixture<ProjectViewComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ VideoStepViewComponent ]
+      declarations: [ ProjectViewComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(VideoStepViewComponent);
+    fixture = TestBed.createComponent(ProjectViewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

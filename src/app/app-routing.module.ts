@@ -7,20 +7,13 @@ import { RouterModule } from '@angular/router';
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'audio',
+        redirectTo: 'project',
       },
       {
-        path: 'audio',
+        path: 'project',
         loadComponent: () =>
-          import('./views/audio-step-view/audio-step-view.component').then(
-            (c) => c.AudioStepViewComponent
-          ),
-      },
-      {
-        path: 'video',
-        loadComponent: () =>
-          import('./views/video-step-view/video-step-view.component').then(
-            (c) => c.VideoStepViewComponent
+          import('./views/project-view/project-view.component').then(
+            (c) => c.ProjectViewComponent
           ),
       },
     ]),
