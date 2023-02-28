@@ -3,11 +3,15 @@
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 
 const ffmpeg = createFFmpeg({ log: true });
+let loaded = false;
 
 addEventListener(
   'message',
   async (scope: { data: { file: File; params: string[] } }) => {
-    await ffmpeg.load();
+    if (!loaded) {
+      await ffmpeg.load();
+      loaded = true;
+    }
     ffmpeg.FS(
       'writeFile',
       scope.data.file.name,
