@@ -16,9 +16,17 @@ addEventListener(
     await ffmpeg.run(...scope.data.params);
     postMessage({
       url: URL.createObjectURL(
-        new Blob([ffmpeg.FS('readFile', 'output.mp4').buffer], {
-          type: 'video/mp4',
-        })
+        new Blob(
+          [
+            ffmpeg.FS(
+              'readFile',
+              scope.data.params[scope.data.params.length - 1]
+            ).buffer,
+          ],
+          {
+            type: 'video/mp4',
+          }
+        )
       ),
     });
   }

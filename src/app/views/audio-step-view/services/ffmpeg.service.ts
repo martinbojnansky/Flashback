@@ -24,7 +24,7 @@ export class FfmpegService {
         '-ss',
         '00:00:02',
         '-to',
-        '00:00:25',
+        '00:00:05',
         '-c',
         'copy',
         'output.mp4',
