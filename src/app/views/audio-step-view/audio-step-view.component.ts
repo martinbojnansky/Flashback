@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
+import { FfmpegService } from './services/ffmpeg.service';
 import { OnsetsService } from './services/onsets.service';
 
 @Component({
@@ -6,22 +7,29 @@ import { OnsetsService } from './services/onsets.service';
   templateUrl: './audio-step-view.component.html',
   styleUrls: ['./audio-step-view.component.scss'],
   standalone: true,
-  providers: [OnsetsService],
+  providers: [OnsetsService, FfmpegService],
 })
 export class AudioStepViewComponent {
-  constructor(protected onsetsService: OnsetsService) {}
+  @ViewChild('player')
+  player!: HTMLVideoElement;
 
-  selectFile(event: Event) {
+  constructor(
+    protected onsetsService: OnsetsService,
+    protected ffmpegService: FfmpegService
+  ) {}
+
+  async selectFile(event: Event) {
     const file: File = (event.target as EventTarget & { files: FileList })
       .files?.[0];
 
     if (file) {
       console.log('STARTED', file);
-      this.onsetsService.splitFile(file).subscribe({
-        next: (files) => {
-          console.log('COMPLETED', files);
-        },
-      });
+      // this.onsetsService.splitFile(file).subscribe({
+      //   next: (files) => {
+      //     console.log('COMPLETED', files);
+      //   },
+      // });
+      this.ffmpegService.trimFile(file);
     }
   }
 }
