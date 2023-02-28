@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve | node browsersync.js",
+    "start": "ng serve",
+    "proxy": "node browsersync.js",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

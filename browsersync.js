@@ -5,7 +5,7 @@ browserSync.init({
   port: 4201,
   proxy: {
     target: "http://localhost:4200",
-    ws: false,
+    ws: true,
     proxyReq: [
       function(proxyReq, req, res) {
         res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
