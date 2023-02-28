@@ -6,7 +6,7 @@
 </div>
 
 <ng-container *ngIf="srcs$ | async as srcs">
-  <video *ngFor="let src of srcs" #player [src]="src" controls></video>
+  <video *ngFor="let src of srcs" #player [src]="src.safeUrl" controls></video>
 </ng-container>
 
 <a routerLink="/video">Next</a>
