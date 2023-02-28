@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
-import { map } from 'rxjs';
+import { Subject } from 'rxjs';
 import { FfmpegService } from './services/ffmpeg.service';
 
 @Component({
@@ -14,9 +14,7 @@ import { FfmpegService } from './services/ffmpeg.service';
   imports: [CommonModule, RouterModule],
 })
 export class VideoStepViewComponent {
-  readonly src$ = this.ffmpegService.videoReady$.pipe(
-    map((url) => this.sanitizer.bypassSecurityTrustResourceUrl(url))
-  );
+  readonly src$ = new Subject<SafeUrl>();
 
   constructor(
     protected ffmpegService: FfmpegService,
@@ -28,8 +26,12 @@ export class VideoStepViewComponent {
       .files?.[0];
 
     if (file) {
-      console.log('STARTED', file);
-      this.ffmpegService.trimFile(file);
+      this.ffmpegService.trimFile(file, '00:00:02', '00:00:05').subscribe({
+        next: (url) => {
+          // TODO: Revoke old url
+          this.src$.next(this.sanitizer.bypassSecurityTrustUrl(url));
+        },
+      }); // TODO: Until destroyed
     }
   }
 }

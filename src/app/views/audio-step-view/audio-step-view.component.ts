@@ -21,20 +21,19 @@ export class AudioStepViewComponent {
 
   readonly srcs$ = new Subject<SafeUrl[]>();
 
-  async selectFile(event: Event) {
+  selectFile(event: Event) {
     const file: File = (event.target as EventTarget & { files: FileList })
       .files?.[0];
 
     if (file) {
-      console.log('STARTED', file);
       this.onsetsService.splitFile(file).subscribe({
         next: (urls) => {
-          console.log('COMPLETED', urls);
+          // TODO: Revoke old urls
           this.srcs$.next(
             urls.map((url) => this.sanitizer.bypassSecurityTrustUrl(url))
           );
         },
-      });
+      }); // TODO: Until destroyed
     }
   }
 }
