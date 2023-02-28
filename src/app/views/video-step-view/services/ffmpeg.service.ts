@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -6,12 +7,17 @@ import { Injectable } from '@angular/core';
 export class FfmpegService {
   private ffmpegWorker: Worker;
 
+  readonly videoReady$ = new Subject<string>();
+
   constructor() {
     this.ffmpegWorker = new Worker(
       new URL('../workers/ffmpeg.worker', import.meta.url)
     );
     this.ffmpegWorker.onmessage = (msg) => {
-      console.log(msg);
+      console.log('FFmpegService', msg);
+      if (msg.data.url) {
+        this.videoReady$.next(msg.data.url);
+      }
     };
   }
 

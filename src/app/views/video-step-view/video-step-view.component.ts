@@ -1,5 +1,8 @@
-import { Component, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
+import { map } from 'rxjs';
 import { FfmpegService } from './services/ffmpeg.service';
 
 @Component({
@@ -8,15 +11,19 @@ import { FfmpegService } from './services/ffmpeg.service';
   styleUrls: ['./video-step-view.component.scss'],
   standalone: true,
   providers: [FfmpegService],
-  imports: [RouterModule],
+  imports: [CommonModule, RouterModule],
 })
 export class VideoStepViewComponent {
-  @ViewChild('player')
-  player!: HTMLVideoElement;
+  readonly src$ = this.ffmpegService.videoReady$.pipe(
+    map((url) => this.sanitizer.bypassSecurityTrustResourceUrl(url))
+  );
 
-  constructor(protected ffmpegService: FfmpegService) {}
+  constructor(
+    protected ffmpegService: FfmpegService,
+    protected sanitizer: DomSanitizer
+  ) {}
 
-  async selectFile(event: Event) {
+  selectFile(event: Event) {
     const file: File = (event.target as EventTarget & { files: FileList })
       .files?.[0];
 
