@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,7 +7,7 @@ import {
   Output,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
 import { OnsetsService } from './services/onsets.service';
 
 @Component({
@@ -16,11 +17,13 @@ import { OnsetsService } from './services/onsets.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   providers: [OnsetsService],
-  imports: [],
+  imports: [CommonModule],
 })
 export class AudioPickerComponent implements OnDestroy {
   @Output()
-  readonly completed = new EventEmitter<string[]>();
+  readonly completed = new EventEmitter<Blob[]>();
+
+  readonly busy$ = new BehaviorSubject<boolean>(false);
 
   private readonly destroyed$ = new Subject<boolean>();
 
@@ -38,11 +41,13 @@ export class AudioPickerComponent implements OnDestroy {
       .files?.[0];
 
     if (file) {
+      this.busy$.next(true);
       this.onsetsService
         .splitFile(file)
         .pipe(takeUntil(this.destroyed$))
         .subscribe({
-          next: (urls) => this.completed.emit(urls),
+          next: (blobs) => this.completed.emit(blobs),
+          complete: () => this.busy$.next(false),
         });
     }
   }

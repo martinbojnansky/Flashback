@@ -1,18 +1,29 @@
-<!-- <as-split direction="horizontal">
-  <as-split-area [size]="60"> -->
-<app-audio-picker (completed)="audioSlices$.next($event)"></app-audio-picker>
-<ng-container *ngIf="videos$ | async as videos">
-  <app-video-editor
-    *ngFor="let video of videos"
-    [audioSlices]="audioSlices$ | async"
-  ></app-video-editor>
-</ng-container>
-<button (click)="addVideo().subscribe()">Add video</button>
-<!--/as-split-area>
-  <<as-split-area [size]="40">
-    <as-split direction="vertical">
-      <as-split-area [size]="40"> Preview goes here </as-split-area>
-      <as-split-area [size]="60"> Library goes here </as-split-area>
-    </as-split>
-  </as-split-area>>
-</as-split-->
+<section>
+  <fieldset class="timeline-fieldset">
+    <legend>Timeline</legend>
+    <ng-container *ngIf="videos$ | async as videos">
+      <fieldset *ngFor="let video of videos; let i = index">
+        <legend>#{{ i }}</legend>
+        <app-video-editor></app-video-editor>
+      </fieldset>
+    </ng-container>
+    <button (click)="addVideo().subscribe()">Add video</button>
+  </fieldset>
+</section>
+<section>
+  <fieldset>
+    <legend>Audio</legend>
+    <app-audio-picker
+      (completed)="audioSlices$.next($event)"
+    ></app-audio-picker>
+  </fieldset>
+  <fieldset>
+    <legend>Preview</legend>
+    <video id="preview" autoplay loop controls></video>
+  </fieldset>
+  <fieldset>
+    <legend>Export</legend>
+    <button>1080p Landscape MP4</button>
+    <button>1080p Portrait MP4</button>
+  </fieldset>
+</section>

@@ -91,7 +91,7 @@ export class OnsetsService {
         channelData,
         sampleRate: sliceBuffer.sampleRate,
       });
-      return URL.createObjectURL(new Blob(mp3Data, { type: 'audio/mpeg' }));
+      return new Blob(mp3Data, { type: 'audio/mpeg' });
     });
 
     return slices;

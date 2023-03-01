@@ -1,11 +1,15 @@
 /// <reference lib="webworker" />
 
+console.info('loading essentia.wasm');
+
 // @ts-ignore
 import { Essentia, EssentiaWASM } from 'essentia.js';
 // @ts-ignore
 import { PolarFFTWASM } from '../lib/polarFFT.module.js';
 // @ts-ignore
-import { OnsetsWASM } from '../lib/onsets.module.js'; // @ts-ignore
+import { OnsetsWASM } from '../lib/onsets.module.js';
+
+console.info('essentia.wasm loaded');
 
 let essentia: any = null;
 
@@ -17,9 +21,9 @@ let allowedParams = [
   'odfsWeights',
   'sensitivity',
 ];
-let params: any = {}; // changing odfs should require changing odfsWeights (at least length), and viceversa
+let params: any = {}; // Changing odfs should require changing odfsWeights (at least length), and viceversa.
 
-// global storage for slicing
+// Global storage for slicing
 let signal: any = null;
 let polarFrames: any = null;
 let onsetPositions: any = null;
@@ -27,13 +31,13 @@ let onsetPositions: any = null;
 try {
   essentia = new Essentia(EssentiaWASM.EssentiaWASM);
 } catch (err: any) {
-  error(err);
+  console.error(err);
 }
 
 addEventListener('message', ({ data }) => {
   switch (data.request) {
     case 'analyse': {
-      log('received analyse cmd');
+      console.info('received analyse cmd');
       // const signal = new Float32Array(data.audio);
       signal = data.audio;
       computeFFT();
@@ -48,45 +52,40 @@ addEventListener('message', ({ data }) => {
     }
     case 'initParams': {
       let [suppliedParamList, newParams] = checkParams(data.params);
-      params = { ...params, ...newParams }; // update existing params obj
-      log(`updated the following params: ${suppliedParamList.join(',')}`);
-      log('current params are: ');
-      console.info(params);
+      params = { ...params, ...newParams }; // Update existing params obj.
+      console.info(
+        `updated the following params: ${suppliedParamList.join(',')}`,
+        params
+      );
       break;
     }
     case 'slice': {
       if (!signal) {
-        error('no audio signal available for slicing');
+        console.error('no audio signal available for slicing');
         break;
       }
       if (!onsetPositions || onsetPositions.length <= 0) {
-        error('no onset positions available for slicing');
+        console.error('no onset positions available for slicing');
         break;
       }
 
       const slices = sliceAudio();
-      // log(slices);
       postMessage(slices);
       break;
     }
     default:
-      error('Received message from main thread; no matching request found!');
+      console.error(
+        'received message from main thread; no matching request found!'
+      );
       break;
   }
 });
 
-function log(msg: string) {
-  console.info('audio-worker info:', msg);
-}
-function error(msg: string) {
-  throw Error(`audio-worker error: \n ${msg}`);
-}
-
 function computeFFT() {
-  polarFrames = []; // clear frames from previous computation
-  // algo instantiation
+  polarFrames = []; // Clear frames from previous computation
+  // Algorithm instantiation
   let PolarFFT = new PolarFFTWASM.PolarFFT(params.frameSize);
-  // frame cutting, windowing
+  // Frame cutting, windowing
   let frames = essentia.FrameGenerator(
     signal,
     params.frameSize,
@@ -95,13 +94,10 @@ function computeFFT() {
 
   for (let i = 0; i < frames.size(); i++) {
     let currentFrame = frames.get(i);
-
     let windowed = essentia.Windowing(currentFrame).frame;
-
     // PolarFFT
     const polar = PolarFFT.compute(essentia.vectorToArray(windowed)); // default: normalized true, size 1024, type 'hann'
-
-    // save polar frames for reuse
+    // Save polar frames for reuse
     polarFrames.push(polar);
   }
 
@@ -118,7 +114,7 @@ function computeOnsets() {
     0.02
   );
 
-  // create ODF matrix to be input to the Onsets algorithm
+  // Create ODF matrix to be input to the Onsets algorithm
   const odfMatrix: any[] = [];
   for (const func of params.odfs) {
     const odfArray = polarFrames?.map(
@@ -140,7 +136,7 @@ function computeOnsets() {
     params.odfsWeights
   ).positions;
   Onsets.shutdown();
-  // check possibly all zeros onsetPositions
+  // Check possibly all zeros onsetPositions
   if (onsetPositions.size() == 0) {
     return new Float32Array(0);
   } else {
@@ -159,16 +155,16 @@ function sliceAudio() {
 }
 
 function checkParams(params: any) {
-  // guard: check for empty params obj
+  // Guard: check for empty params obj
   if (!params) {
-    error('missing `params` object in the `updateParams` command');
+    console.error('missing `params` object in the `updateParams` command');
     return [undefined, undefined];
   }
   let suppliedParamList = Object.keys(params);
 
   // guard: check obj properties for forbidden params
   if (!paramsAreAllowed(suppliedParamList)) {
-    error(
+    console.error(
       `illegal parameter(s) in 'updateParams' command \n - ${getUnsupportedParams(
         suppliedParamList
       ).join('\n - ')}`
@@ -205,12 +201,12 @@ function odfParamsAreOkay(
       if (onsetParamsAreEqualLength) {
         return 0;
       } else {
-        error(
+        console.error(
           'make sure `odfs` and `odfsWeights` are equal length, i.e. provide the same number of weights as ODF methods'
         );
       }
     } else {
-      error('always update both `odfs` and `odfsWeights` params');
+      console.error('always update both `odfs` and `odfsWeights` params');
     }
   } else {
     return 0;

@@ -1,13 +1,10 @@
-<div>
-  <label>Select file:</label>
-  <input type="file" (change)="selectFile($event)" />
-</div>
-<video #player [src]="src$ | async" autoplay loop controls></video>
-<input
-  type="range"
-  [formControl]="startControl"
-  name="start"
-  min="0"
-  max="100"
-/>
-{{ startControl.value }}
+<input type="file" (change)="selectFile($event)" />
+<video
+  #player
+  [src]="src$ | async"
+  loop
+  controls
+  (keydown.[)="trim(player.currentTime)"
+></video>
+<button (click)="trim(player.currentTime)">Trim Start</button>
+<span>Start: {{ startControl.value }}</span>

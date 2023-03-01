@@ -1,13 +1,8 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnDestroy,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
 import { FfmpegService } from './services/ffmpeg.service';
 
 @Component({
@@ -20,9 +15,6 @@ import { FfmpegService } from './services/ffmpeg.service';
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
 })
 export class VideoEditorComponent implements OnDestroy {
-  @Input()
-  audioSlices: string[] | null = null;
-
   readonly src$ = new Subject<SafeUrl>();
 
   readonly startControl = new FormControl<number>(0);
@@ -41,18 +33,24 @@ export class VideoEditorComponent implements OnDestroy {
   selectFile(event: Event) {
     const file: File = (event.target as EventTarget & { files: FileList })
       .files?.[0];
-    console.log(file);
 
     if (file) {
-      this.ffmpegService
-        .trimFile(file, '00:00:02', '00:00:05')
-        .pipe(takeUntil(this.destroyed$))
-        .subscribe({
-          next: (url) => {
-            // TODO: Revoke old url
-            this.src$.next(this.sanitizer.bypassSecurityTrustUrl(url));
-          },
-        });
+      this.src$.next(
+        this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(file))
+      );
+      // this.ffmpegService
+      //   .trimFile(file, '00:00:02', '00:00:05')
+      //   .pipe(takeUntil(this.destroyed$))
+      //   .subscribe({
+      //     next: (url) => {
+      //       // TODO: Revoke old url
+      //       this.src$.next(this.sanitizer.bypassSecurityTrustUrl(url));
+      //     },
+      //   });
     }
+  }
+
+  trim(time: number) {
+    this.startControl.patchValue(time);
   }
 }
