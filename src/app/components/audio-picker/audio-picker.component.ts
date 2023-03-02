@@ -56,8 +56,8 @@ export class AudioPickerComponent implements OnDestroy {
         .subscribe({
           next: (slices) => {
             this.analyzed.emit(slices);
-            this.busy$.next(false);
-            this.msg$.next(`${slices.length} onsets`);
+            // this.busy$.next(false); Do not allow file change anymore
+            this.msg$.next(`${file.name} (${slices.length} onsets)`);
           },
           error: (err) => {
             this.busy$.next(false);

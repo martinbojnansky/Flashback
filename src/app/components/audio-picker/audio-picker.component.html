@@ -1,2 +1,6 @@
-<input type="file" (change)="selectFile($event)" [disabled]="busy$ | async" />
+<input
+  *ngIf="(busy$ | async) === false"
+  type="file"
+  (change)="selectFile($event)"
+/>
 <span>{{ msg$ | async }}</span>
