@@ -144,7 +144,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       data.groups,
       {
         align: 'left',
-        editable: true,
+        editable: { add: true, remove: true, updateTime: true },
         groupEditable: false,
         snap: (date, scale, step) => {
           date.setMilliseconds(0);
