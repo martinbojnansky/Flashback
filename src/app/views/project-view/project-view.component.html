@@ -1,31 +1,41 @@
 <section class="section section--horizontal section--top">
   <section class="section section--vertical section--left">
+    <!-- audio -->
     <fieldset class="fieldset--audio">
       <legend>Audio</legend>
       <app-audio-picker
+        (picked)="audioFile$.next($event)"
         (analyzed)="onsetsLengths$.next($event)"
       ></app-audio-picker>
     </fieldset>
+    <!-- editor -->
     <fieldset class="fieldset--stretch" class="fieldset--editor">
       <legend>Editor</legend>
       <app-video-editor></app-video-editor>
     </fieldset>
   </section>
   <section class="section section--vertical section--right">
+    <!-- export -->
     <fieldset>
       <legend>Export</legend>
       <button>1080p Landscape MP4</button>
       <button>1080p Portrait MP4</button>
     </fieldset>
+    <!-- preview -->
     <fieldset class="fieldset--preview">
       <legend>Preview</legend>
-      <video id="preview" autoplay loop controls></video>
+      <app-preview></app-preview>
     </fieldset>
   </section>
 </section>
 <section class="section section--vertical section--bottom">
+  <!-- timeline -->
   <fieldset class="fieldset--timeline">
     <legend>Timeline</legend>
-    <app-timeline [audioSlices]="onsetsLengths$ | async"></app-timeline>
+    <app-timeline
+      [audios]="onsetsLengths$ | async"
+      [videos]="videos$ | async"
+      (videoAdded)="addVideo($event).subscribe()"
+    ></app-timeline>
   </fieldset>
 </section>

@@ -37,7 +37,7 @@ try {
 addEventListener('message', ({ data }) => {
   switch (data.request) {
     case 'analyze': {
-      console.info('received analyze cmd');
+      console.info('analyzing audio', data);
       // const signal = new Float32Array(data.audio);
       signal = data.audio;
       computeFFT();

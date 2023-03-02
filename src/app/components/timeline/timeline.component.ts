@@ -3,15 +3,20 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
   OnDestroy,
+  Output,
   ViewChild,
 } from '@angular/core';
 import { BehaviorSubject, combineLatest, Subject, takeUntil } from 'rxjs';
+import { Video } from 'src/app/models/video';
+import { uuid } from 'src/app/utils/uuid';
 import {
   DataGroupCollectionType,
   DataItemCollectionType,
   Timeline,
+  TimelineItem,
 } from 'vis-timeline';
 
 @Component({
@@ -25,26 +30,38 @@ import {
 })
 export class TimelineComponent implements AfterContentInit, OnDestroy {
   @Input()
-  set audioSlices(value: number[] | null) {
-    this.audioSlices$.next(value || []);
+  set audios(value: number[] | null) {
+    this.audios$.next(value || []);
   }
 
-  private readonly audioSlices$ = new BehaviorSubject<number[]>([]);
+  @Input()
+  set videos(value: Video[] | null) {
+    this.videos$.next(value || []);
+  }
+
+  @Output()
+  readonly itemSelected = new EventEmitter<string>();
+
+  @Output()
+  readonly videoAdded = new EventEmitter<Video>();
+
+  @ViewChild('timelineContainer')
+  timelineContainer!: ElementRef<HTMLDivElement>;
+
+  private readonly audios$ = new BehaviorSubject<number[]>([]);
+  private readonly videos$ = new BehaviorSubject<Video[]>([]);
 
   private timeline!: Timeline;
 
   private readonly destroyed$ = new Subject<boolean>();
 
-  @ViewChild('timelineContainer')
-  timelineContainer!: ElementRef<HTMLDivElement>;
-
   constructor() {}
 
   ngAfterContentInit(): void {
-    combineLatest([this.audioSlices$])
+    combineLatest([this.videos$, this.audios$])
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
-        next: ([audioSlices]) => this.renderTimeline(audioSlices),
+        next: ([videos, audios]) => this.renderTimeline(videos, audios),
       });
   }
 
@@ -52,57 +69,109 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     this.destroyed$.next(true);
   }
 
-  private renderTimeline(audioSlices: number[]) {
+  private renderTimeline(videos: Video[], audios: number[]) {
     if (!this.timelineContainer) {
       return;
     }
 
+    const data = this.createTimelineData(audios, videos);
+
+    if (!this.timeline) {
+      console.info('rendering timeline for the first time', data.items);
+      this.timeline = this.createTimeline(
+        this.timelineContainer.nativeElement,
+        data
+      );
+    } else {
+      console.info('re-rendering timeline', data.items);
+      this.timeline.setData(data);
+    }
+  }
+
+  private createTimelineData(audios: number[], videos: Video[]) {
+    const groups: DataGroupCollectionType = [
+      { id: 1, content: 'VIDEO' },
+      { id: 2, content: 'AUDIO' },
+    ];
     const items: DataItemCollectionType = [];
-    audioSlices.forEach((audioSlice, i) => {
+    audios.forEach((audio, i) => {
       items.push({
-        id: i,
-        content: `A${i + 1} (${audioSlice.toFixed(2)}s)`,
+        id: uuid(),
+        content: `A${i + 1} (${audio.toFixed(2)}s)`,
         editable: false,
+        selectable: false,
         start: this.getSliceStartDate(i),
         end: this.getSliceStartDate(i + 1),
         group: 2,
       });
     });
-
-    items.push({
-      id: audioSlices.length,
-      content: 'V..',
-      editable: true,
-      start: this.getSliceStartDate(0),
-      end: this.getSliceStartDate(1),
-      group: 1,
-    });
-
-    console.info('rendering timeline', items);
-
-    const groups: DataGroupCollectionType = [
-      { id: 1, content: 'VIDEO' },
-      { id: 2, content: 'AUDIO' },
-    ];
-
-    this.timeline = new Timeline(
-      this.timelineContainer.nativeElement,
-      items,
-      groups,
-      {
+    videos.forEach((video, i) => {
+      const last = items[items.length - 1];
+      let start = this.getSliceStartDate(0);
+      if (last?.group === 1) {
+        start = last.end as Date;
+      }
+      items.push({
+        id: video.id,
+        content: `${video.file?.name || ''}`,
         editable: true,
-        min: 1,
-        max: this.getSliceStartDate(audioSlices.length),
-        onAdd: (item) => {
-          if (item.group === 2) {
-            console.log('prevent add music', item);
-            this.timeline.setData({ ...{ groups }, ...{ items } });
-          }
-        },
+        start: start,
+        end: this.getSliceStartDate(i + video.length),
+        group: 1,
+      });
+    });
+    return {
+      ...{ groups },
+      ...{ items },
+    };
+  }
+
+  private createTimeline(
+    timelineContainerElement: HTMLDivElement,
+    data: {
+      groups: DataGroupCollectionType;
+      items: DataItemCollectionType;
+    }
+  ) {
+    const timeline = new Timeline(
+      timelineContainerElement,
+      data.items,
+      data.groups,
+      {
+        align: 'left',
+        editable: true,
+        groupEditable: true,
+        min: 0,
+        // max: this.getSliceStartDate(audios.length),
         showMajorLabels: false,
-        showMinorLabels: true,
+        showMinorLabels: false,
+        onAdd: (item) => this.onAddItem(item),
       }
     );
+
+    timeline.on('select', (props) => {
+      console.info('item selected', props);
+      this.itemSelected.emit(props.items?.[0] || null);
+    });
+
+    timeline.on('changed', (props) => {
+      console.info('timeline changed', props);
+    });
+
+    return timeline;
+  }
+
+  private onAddItem(item: TimelineItem) {
+    if (item.group === 1) {
+      console.info('adding video item', item);
+      this.videoAdded.emit({
+        id: uuid(),
+        file: undefined,
+        length: 1,
+      });
+    } else if (item.group === 2) {
+      console.info('prevent adding audio item', item);
+    }
   }
 
   private getSliceStartDate(index: number): Date {

@@ -21,6 +21,9 @@ import { OnsetsService } from './services/onsets.service';
 })
 export class AudioPickerComponent implements OnDestroy {
   @Output()
+  readonly picked = new EventEmitter<File>();
+
+  @Output()
   readonly analyzed = new EventEmitter<number[]>();
 
   readonly msg$ = new BehaviorSubject<string>('');
@@ -41,6 +44,8 @@ export class AudioPickerComponent implements OnDestroy {
   selectFile(event: Event) {
     const file: File = (event.target as EventTarget & { files: FileList })
       .files?.[0];
+    console.info('picked audio file', file);
+    this.picked.emit(file);
 
     if (file) {
       this.busy$.next(true);

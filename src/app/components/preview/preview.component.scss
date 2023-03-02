@@ -1,0 +1,18 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+video {
+  width: 100%;
+}
+
+.controls {
+  display: flex;
+  flex-direction: row;
+  margin-top: 0.25rem;
+
+  > *:not(:last-child) {
+    margin-right: 0.25rem;
+  }
+}
