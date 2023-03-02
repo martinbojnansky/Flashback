@@ -50,7 +50,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   readonly videoRemoved = new EventEmitter<string>();
 
   @Output()
-  readonly videoMoved = new EventEmitter<[string, number, number]>();
+  readonly videoUpdated = new EventEmitter<[string, number, number]>();
 
   @ViewChild('timelineContainer')
   timelineContainer!: ElementRef<HTMLDivElement>;
@@ -118,7 +118,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       items.push({
         id: video.id,
         content: `${video.file?.name || ''}`,
-        editable: true,
+        editable: { updateTime: true, remove: true, updateGroup: false },
         start: this.lengthToDate(video.start),
         end: this.lengthToDate(video.end),
         group: 1,
@@ -156,7 +156,8 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
         showMinorLabels: false,
         onAdd: (item) => this.onAddItem(item),
         onRemove: (item) => this.onRemoveItem(item),
-        onMove: (item) => this.onMoveItem(item),
+        onMove: (item) => this.onUpdateItem(item),
+        onUpdate: (item) => this.onUpdateItem(item),
       }
     );
 
@@ -164,8 +165,6 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       console.info('item selected', props);
       this.itemSelected.emit(props.items?.[0] || null);
     });
-
-    // TODO: On resize, move, delete
 
     return timeline;
   }
@@ -196,15 +195,15 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     }
   }
 
-  private onMoveItem(item: TimelineItem) {
+  private onUpdateItem(item: TimelineItem) {
     if (item.group === 1) {
       const event = [
         item.id as string,
         this.dateToLength(item.start as Date),
         this.dateToLength(item.end as Date),
       ];
-      console.info('moving video item', item, event);
-      this.videoMoved.emit([
+      console.info('updating video item', item, event);
+      this.videoUpdated.emit([
         item.id as string,
         this.dateToLength(item.start as Date),
         this.dateToLength(item.end as Date),

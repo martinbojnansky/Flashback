@@ -54,7 +54,7 @@ export class ProjectViewComponent implements OnDestroy {
     );
   }
 
-  moveVideo(event: [id: string, start: number, end: number]) {
+  updateVideo(event: [id: string, start: number, end: number]) {
     return this.videos$.pipe(
       take(1),
       tap((videos) => {
