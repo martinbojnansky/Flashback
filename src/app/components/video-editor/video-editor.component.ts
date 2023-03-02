@@ -1,8 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  OnDestroy,
+} from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { Subject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
+import { Video } from 'src/app/models/video';
 import { FfmpegService } from './services/ffmpeg.service';
 
 @Component({
@@ -15,6 +21,13 @@ import { FfmpegService } from './services/ffmpeg.service';
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
 })
 export class VideoEditorComponent implements OnDestroy {
+  @Input()
+  set video(value: Video | null) {
+    this.video$.next(value);
+  }
+
+  readonly video$ = new BehaviorSubject<Video | null>(null);
+
   readonly src$ = new Subject<SafeUrl>();
 
   readonly startControl = new FormControl<number>(0);

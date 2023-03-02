@@ -117,7 +117,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     videos.forEach((video, i) => {
       items.push({
         id: video.id,
-        content: `${video.file?.name || ''}`,
+        content: `${video.file?.name || '?'}`,
         editable: { updateTime: true, remove: true, updateGroup: false },
         start: this.lengthToDate(video.start),
         end: this.lengthToDate(video.end),

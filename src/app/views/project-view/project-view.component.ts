@@ -26,6 +26,8 @@ export class ProjectViewComponent implements OnDestroy {
 
   readonly videos$ = new BehaviorSubject<Video[]>([]);
 
+  readonly selectedVideo$ = new BehaviorSubject<Video | null>(null);
+
   private readonly destroyed$ = new Subject<boolean>();
 
   constructor() {}
@@ -65,6 +67,21 @@ export class ProjectViewComponent implements OnDestroy {
           end: event[2],
         };
         this.videos$.next([...videos]);
+      }),
+      takeUntil(this.destroyed$)
+    );
+  }
+
+  selectVideo(id: string | null) {
+    return this.videos$.pipe(
+      take(1),
+      tap((videos) => {
+        if (id) {
+          const index = videos.findIndex((v) => v.id === id);
+          this.selectedVideo$.next(videos[index]);
+        } else {
+          this.selectedVideo$.next(null);
+        }
       }),
       takeUntil(this.destroyed$)
     );

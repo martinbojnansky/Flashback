@@ -1,10 +1,12 @@
-<input type="file" (change)="selectFile($event)" />
-<video
-  #player
-  [src]="src$ | async"
-  loop
-  controls
-  (keydown.[)="trim(player.currentTime)"
-></video>
-<button (click)="trim(player.currentTime)">Trim Start</button>
-<span>Start: {{ startControl.value }}</span>
+<ng-container *ngIf="video$ | async as video">
+  <input type="file" (change)="selectFile($event)" />
+  <video
+    #player
+    [src]="src$ | async"
+    loop
+    controls
+    (keydown.[)="trim(player.currentTime)"
+  ></video>
+  <button (click)="trim(player.currentTime)">Trim Start</button>
+  <span>Start: {{ startControl.value }}</span>
+</ng-container>

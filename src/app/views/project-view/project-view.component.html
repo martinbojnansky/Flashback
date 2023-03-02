@@ -11,7 +11,7 @@
     <!-- editor -->
     <fieldset class="fieldset--stretch" class="fieldset--editor">
       <legend>Editor</legend>
-      <app-video-editor></app-video-editor>
+      <app-video-editor [video]="selectedVideo$ | async"></app-video-editor>
     </fieldset>
   </section>
   <section class="section section--vertical section--right">
@@ -38,6 +38,7 @@
       (videoAdded)="addVideo($event).subscribe()"
       (videoRemoved)="removeVideo($event).subscribe()"
       (videoUpdated)="updateVideo($event).subscribe()"
+      (itemSelected)="selectVideo($event).subscribe()"
     ></app-timeline>
   </fieldset>
 </section>
