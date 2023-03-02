@@ -9,6 +9,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
+import * as moment from 'moment';
 import { BehaviorSubject, combineLatest, Subject, takeUntil } from 'rxjs';
 import { Video } from 'src/app/models/video';
 import { uuid } from 'src/app/utils/uuid';
@@ -52,6 +53,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   private readonly videos$ = new BehaviorSubject<Video[]>([]);
 
   private timeline!: Timeline;
+  private readonly dateRef = new Date(2023, 1, 1);
 
   private readonly destroyed$ = new Subject<boolean>();
 
@@ -80,7 +82,8 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       console.info('rendering timeline for the first time', data.items);
       this.timeline = this.createTimeline(
         this.timelineContainer.nativeElement,
-        data
+        data,
+        this.lengthToDate(audios.length)
       );
     } else {
       console.info('re-rendering timeline', data.items);
@@ -100,23 +103,18 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
         content: `A${i + 1} (${audio.toFixed(2)}s)`,
         editable: false,
         selectable: false,
-        start: this.getSliceStartDate(i),
-        end: this.getSliceStartDate(i + 1),
+        start: this.lengthToDate(i),
+        end: this.lengthToDate(i + 1),
         group: 2,
       });
     });
     videos.forEach((video, i) => {
-      const last = items[items.length - 1];
-      let start = this.getSliceStartDate(0);
-      if (last?.group === 1) {
-        start = last.end as Date;
-      }
       items.push({
         id: video.id,
         content: `${video.file?.name || ''}`,
         editable: true,
-        start: start,
-        end: this.getSliceStartDate(i + video.length),
+        start: this.lengthToDate(video.start),
+        end: this.lengthToDate(video.end),
         group: 1,
       });
     });
@@ -131,7 +129,8 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     data: {
       groups: DataGroupCollectionType;
       items: DataItemCollectionType;
-    }
+    },
+    max: Date
   ) {
     const timeline = new Timeline(
       timelineContainerElement,
@@ -140,9 +139,13 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       {
         align: 'left',
         editable: true,
-        groupEditable: true,
+        groupEditable: false,
+        snap: (date, scale, step) => {
+          date.setMilliseconds(0);
+          return date;
+        },
         min: 0,
-        // max: this.getSliceStartDate(audios.length),
+        max: max,
         showMajorLabels: false,
         showMinorLabels: false,
         onAdd: (item) => this.onAddItem(item),
@@ -154,9 +157,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       this.itemSelected.emit(props.items?.[0] || null);
     });
 
-    timeline.on('changed', (props) => {
-      console.info('timeline changed', props);
-    });
+    // TODO: On resize, move, delete
 
     return timeline;
   }
@@ -168,16 +169,23 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
         id: uuid(),
         file: undefined,
         length: 1,
+        start: this.dateToLength(item.start as Date),
+        end: this.dateToLength(
+          moment(item.start as Date)
+            .add(1, 'second')
+            .toDate()
+        ),
       });
     } else if (item.group === 2) {
       console.info('prevent adding audio item', item);
     }
   }
 
-  private getSliceStartDate(index: number): Date {
-    if (index >= 999) {
-      console.error('maximum timeline onsets 999 reached');
-    }
-    return new Date(2023, 1, 1, 0, 0, 0, index);
+  private lengthToDate(length: number): Date {
+    return moment(this.dateRef).add(length, 'seconds').toDate();
+  }
+
+  private dateToLength(date: Date): number {
+    return moment(date).diff(this.dateRef) / 1000;
   }
 }
