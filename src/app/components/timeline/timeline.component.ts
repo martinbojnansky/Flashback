@@ -61,27 +61,27 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     audioSlices.forEach((audioSlice, i) => {
       items.push({
         id: i,
-        content: `#${i} (${audioSlice.toFixed(2)}s)`,
+        content: `A${i} (${audioSlice.toFixed(2)}s)`,
         editable: false,
-        start: new Date(2023, 1, i + 1, 1),
-        end: new Date(2023, 1, i + 2, 0),
+        start: new Date(2023, 1, i + 1),
+        end: new Date(2023, 1, i + 2),
         group: 2,
       });
     });
     items.push({
       id: audioSlices.length,
-      content: '(unknown)',
+      content: 'V..',
       editable: true,
-      start: new Date(2023, 1, 1, 1),
-      end: new Date(2023, 1, 2, 0),
+      start: new Date(2023, 1, 1),
+      end: new Date(2023, 1, 2),
       group: 1,
     });
 
     console.info('rendering timeline', items);
 
     const groups: DataGroupCollectionType = [
-      { id: 1, content: '📹' },
-      { id: 2, content: '🎵' },
+      { id: 1, content: 'VID' },
+      { id: 2, content: 'AUD' },
     ];
 
     this.timeline = new Timeline(
@@ -90,8 +90,8 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       groups,
       {
         editable: true,
-        min: new Date(2023, 1, 1, 1),
-        max: new Date(2023, 1, audioSlices.length + 1, 1),
+        min: new Date(2023, 1, 1),
+        max: new Date(2023, 1, audioSlices.length + 1),
         onAdd: (item) => {
           if (item.group === 2) {
             console.log('prevent add music', item);

@@ -2,6 +2,29 @@
   width: 100%;
 }
 
-.vis-bottom {
-  display: none;
+::ng-deep {
+  .vis-item {
+    &.vis-editable,
+    &.vis-editable.vis-selected {
+      background: gold;
+      border-color: gold;
+      color: black;
+
+      &:hover {
+        cursor: pointer;
+      }
+    }
+
+    &.vis-editable.vis-selected {
+      background: cyan;
+      border-color: cyan;
+    }
+
+    &.vis-readonly,
+    &.vis-readonly.vis-selected {
+      background: coral;
+      border-color: coral;
+      color: white;
+    }
+  }
 }
