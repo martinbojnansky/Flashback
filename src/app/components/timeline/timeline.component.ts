@@ -50,7 +50,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   readonly videoRemoved = new EventEmitter<string>();
 
   @Output()
-  readonly videoUpdated = new EventEmitter<[string, number, number]>();
+  readonly videoUpdated = new EventEmitter<Partial<Video>>();
 
   @ViewChild('timelineContainer')
   timelineContainer!: ElementRef<HTMLDivElement>;
@@ -89,7 +89,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       this.timeline = this.createTimeline(
         this.timelineContainer.nativeElement,
         data,
-        this.lengthToDate(audios.length)
+        audios
       );
     } else {
       console.info('re-rendering timeline', data.items);
@@ -109,8 +109,8 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
         content: `A${i + 1} (${audio.toFixed(2)}s)`,
         editable: false,
         selectable: false,
-        start: this.lengthToDate(i),
-        end: this.lengthToDate(i + 1),
+        start: this.indexToDate(i),
+        end: this.indexToDate(i + 1),
         group: 2,
       });
     });
@@ -119,8 +119,8 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
         id: video.id,
         content: `${video.file?.name || '?'}`,
         editable: { updateTime: true, remove: true, updateGroup: false },
-        start: this.lengthToDate(video.start),
-        end: this.lengthToDate(video.end),
+        start: this.indexToDate(video.startIndex),
+        end: this.indexToDate(video.endIndex),
         group: 1,
       });
     });
@@ -136,7 +136,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       groups: DataGroupCollectionType;
       items: DataItemCollectionType;
     },
-    max: Date
+    audios: number[]
   ) {
     const timeline = new Timeline(
       timelineContainerElement,
@@ -150,14 +150,14 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
           date.setMilliseconds(0);
           return date;
         },
-        min: 0,
-        max: max,
+        min: this.indexToDate(0),
+        max: this.indexToDate(audios.length),
         showMajorLabels: false,
         showMinorLabels: false,
-        onAdd: (item) => this.onAddItem(item),
+        onAdd: (item) => this.onAddItem(item, audios),
         onRemove: (item) => this.onRemoveItem(item),
-        onMove: (item) => this.onUpdateItem(item),
-        onUpdate: (item) => this.onUpdateItem(item),
+        onMove: (item) => this.onUpdateItem(item, audios),
+        onUpdate: (item) => this.onUpdateItem(item, audios),
       }
     );
 
@@ -169,20 +169,18 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     return timeline;
   }
 
-  private onAddItem(item: TimelineItem) {
+  private onAddItem(item: TimelineItem, audios: number[]) {
     if (item.group === 1) {
-      console.info('adding video item', item);
-      this.videoAdded.emit({
-        id: uuid(),
-        file: undefined,
-        length: 1,
-        start: this.dateToLength(item.start as Date),
-        end: this.dateToLength(
-          moment(item.start as Date)
-            .add(1, 'second')
-            .toDate()
+      const video: Video = {
+        ...this.getVideoPatch(
+          item.start as Date,
+          moment(item.start).add(1, 'second').toDate(),
+          audios
         ),
-      });
+        id: uuid(),
+      };
+      console.info('adding video item', item, video);
+      this.videoAdded.emit(video);
     } else if (item.group === 2) {
       console.info('prevent adding audio item', item);
     }
@@ -195,27 +193,43 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     }
   }
 
-  private onUpdateItem(item: TimelineItem) {
+  private onUpdateItem(item: TimelineItem, audios: number[]) {
     if (item.group === 1) {
-      const event = [
-        item.id as string,
-        this.dateToLength(item.start as Date),
-        this.dateToLength(item.end as Date),
-      ];
-      console.info('updating video item', item, event);
-      this.videoUpdated.emit([
-        item.id as string,
-        this.dateToLength(item.start as Date),
-        this.dateToLength(item.end as Date),
-      ]);
+      const video: Partial<Video> = {
+        ...this.getVideoPatch(item.start as Date, item.end as Date, audios),
+        id: item.id as string,
+      };
+      console.info('updating video item', item, video);
+      this.videoUpdated.emit(video);
     }
   }
 
-  private lengthToDate(length: number): Date {
-    return moment(this.dateRef).add(length, 'seconds').toDate();
+  private getVideoPatch(start: Date, end: Date, audios: number[]) {
+    const startIndex = this.dateToIndex(start);
+    const endIndex = this.dateToIndex(end);
+    const startTime = this.indexToTime(startIndex, audios);
+    const endTime = this.indexToTime(endIndex, audios);
+    return {
+      ...{ startIndex },
+      ...{ startTime },
+      ...{ endIndex },
+      ...{ endTime },
+    };
   }
 
-  private dateToLength(date: Date): number {
+  private indexToDate(index: number): Date {
+    return moment(this.dateRef).add(index, 'seconds').toDate();
+  }
+
+  private dateToIndex(date: Date): number {
     return moment(date).diff(this.dateRef) / 1000;
+  }
+
+  private indexToTime(index: number, audios: number[]): number {
+    let time = 0;
+    for (let i = 0; i <= index; i++) {
+      time += audios[i - 1] || 0;
+    }
+    return time;
   }
 }

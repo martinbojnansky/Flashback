@@ -1,7 +1,8 @@
 export interface Video {
   id: string;
   file?: File;
-  length: number;
-  start: number;
-  end: number;
+  startIndex: number;
+  endIndex: number;
+  startTime: number;
+  endTime: number;
 }
