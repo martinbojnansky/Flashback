@@ -37,6 +37,7 @@
       [videos]="videos$ | async"
       (videoAdded)="addVideo($event).subscribe()"
       (videoRemoved)="removeVideo($event).subscribe()"
+      (videoMoved)="moveVideo($event).subscribe()"
     ></app-timeline>
   </fieldset>
 </section>
