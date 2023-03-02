@@ -36,6 +36,7 @@
       [audios]="onsetsLengths$ | async"
       [videos]="videos$ | async"
       (videoAdded)="addVideo($event).subscribe()"
+      (videoRemoved)="removeVideo($event).subscribe()"
     ></app-timeline>
   </fieldset>
 </section>

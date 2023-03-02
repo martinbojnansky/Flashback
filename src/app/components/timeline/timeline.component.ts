@@ -46,6 +46,9 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   @Output()
   readonly videoAdded = new EventEmitter<Video>();
 
+  @Output()
+  readonly videoRemoved = new EventEmitter<string>();
+
   @ViewChild('timelineContainer')
   timelineContainer!: ElementRef<HTMLDivElement>;
 
@@ -149,6 +152,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
         showMajorLabels: false,
         showMinorLabels: false,
         onAdd: (item) => this.onAddItem(item),
+        onRemove: (item) => this.onRemoveItem(item),
       }
     );
 
@@ -178,6 +182,13 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       });
     } else if (item.group === 2) {
       console.info('prevent adding audio item', item);
+    }
+  }
+
+  private onRemoveItem(item: TimelineItem) {
+    if (item.group === 1) {
+      console.info('removing video item', item);
+      this.videoRemoved.emit(item.id as string);
     }
   }
 

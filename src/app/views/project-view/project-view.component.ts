@@ -41,4 +41,16 @@ export class ProjectViewComponent implements OnDestroy {
       takeUntil(this.destroyed$)
     );
   }
+
+  removeVideo(id: string) {
+    return this.videos$.pipe(
+      take(1),
+      tap((videos) => {
+        const index = videos.findIndex((v) => v.id === id);
+        videos.splice(index, 1);
+        this.videos$.next([...videos]);
+      }),
+      takeUntil(this.destroyed$)
+    );
+  }
 }
