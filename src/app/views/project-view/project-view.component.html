@@ -1,12 +1,12 @@
 <section class="section section--horizontal section--top">
   <section class="section section--vertical section--left">
-    <fieldset style="border-color: coral">
+    <fieldset class="fieldset--audio">
       <legend>Audio</legend>
       <app-audio-picker
         (analyzed)="onsetsLengths$.next($event)"
       ></app-audio-picker>
     </fieldset>
-    <fieldset class="fieldset--stretch" style="border-color: cyan">
+    <fieldset class="fieldset--stretch" class="fieldset--editor">
       <legend>Editor</legend>
       <app-video-editor></app-video-editor>
     </fieldset>
@@ -17,14 +17,14 @@
       <button>1080p Landscape MP4</button>
       <button>1080p Portrait MP4</button>
     </fieldset>
-    <fieldset style="border-color: gold">
+    <fieldset class="fieldset--preview">
       <legend>Preview</legend>
       <video id="preview" autoplay loop controls></video>
     </fieldset>
   </section>
 </section>
 <section class="section section--vertical section--bottom">
-  <fieldset>
+  <fieldset class="fieldset--timeline">
     <legend>Timeline</legend>
     <app-timeline [audioSlices]="onsetsLengths$ | async"></app-timeline>
   </fieldset>

@@ -61,27 +61,28 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     audioSlices.forEach((audioSlice, i) => {
       items.push({
         id: i,
-        content: `A${i} (${audioSlice.toFixed(2)}s)`,
+        content: `A${i + 1} (${audioSlice.toFixed(2)}s)`,
         editable: false,
-        start: new Date(2023, 1, i + 1),
-        end: new Date(2023, 1, i + 2),
+        start: this.getSliceStartDate(i),
+        end: this.getSliceStartDate(i + 1),
         group: 2,
       });
     });
+
     items.push({
       id: audioSlices.length,
       content: 'V..',
       editable: true,
-      start: new Date(2023, 1, 1),
-      end: new Date(2023, 1, 2),
+      start: this.getSliceStartDate(0),
+      end: this.getSliceStartDate(1),
       group: 1,
     });
 
     console.info('rendering timeline', items);
 
     const groups: DataGroupCollectionType = [
-      { id: 1, content: 'VID' },
-      { id: 2, content: 'AUD' },
+      { id: 1, content: 'VIDEO' },
+      { id: 2, content: 'AUDIO' },
     ];
 
     this.timeline = new Timeline(
@@ -90,15 +91,24 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       groups,
       {
         editable: true,
-        min: new Date(2023, 1, 1),
-        max: new Date(2023, 1, audioSlices.length + 1),
+        min: 1,
+        max: this.getSliceStartDate(audioSlices.length),
         onAdd: (item) => {
           if (item.group === 2) {
             console.log('prevent add music', item);
             this.timeline.setData({ ...{ groups }, ...{ items } });
           }
         },
+        showMajorLabels: false,
+        showMinorLabels: true,
       }
     );
+  }
+
+  private getSliceStartDate(index: number): Date {
+    if (index >= 999) {
+      console.error('maximum timeline onsets 999 reached');
+    }
+    return new Date(2023, 1, 1, 0, 0, 0, index);
   }
 }

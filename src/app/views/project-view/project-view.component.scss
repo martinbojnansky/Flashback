@@ -5,14 +5,6 @@
   padding: 0.5rem;
 }
 
-fieldset {
-  border: 1px solid #e2e2e2;
-
-  &.fieldset--stretch {
-    flex: 1 1 auto;
-  }
-}
-
 .section {
   display: flex;
   
@@ -42,6 +34,40 @@ fieldset {
   }
 }
 
-#preview {
-  width: 100%;
+@mixin fieldsetColor($color) {
+  border-color: $color;
+
+  legend {
+    color: $color;
+  }
+}
+
+fieldset {
+  border: 1px solid #e2e2e2;
+
+  &.fieldset--stretch {
+    flex: 1 1 auto;
+  }
+
+  &.fieldset--audio {
+    @include fieldsetColor(coral);
+  }
+
+  &.fieldset--editor {
+    @include fieldsetColor(cyan);
+    flex: 1 1 auto;
+  }
+
+  &.fieldset--preview {
+    @include fieldsetColor(chartreuse);
+    flex: 1 1 auto;
+
+    #preview {
+      width: 100%;
+    }
+  }
+
+  &.fieldset--timeline {
+    @include fieldsetColor(gold);
+  }
 }

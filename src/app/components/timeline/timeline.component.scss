@@ -3,6 +3,21 @@
 }
 
 ::ng-deep {
+  .vis-time-axis .vis-text,
+  .vis-labelset .vis-label {
+    color: white;
+  }
+
+  .vis-timeline {
+    border: none;
+  }
+
+  .vis-time-axis {
+    .vis-grid.vis-minor {
+      border-color: white;
+    }
+  }
+
   .vis-item {
     &.vis-editable,
     &.vis-editable.vis-selected {
