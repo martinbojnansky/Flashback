@@ -14,7 +14,7 @@
   <fieldset>
     <legend>Audio</legend>
     <app-audio-picker
-      (completed)="audioSlices$.next($event)"
+      (analyzed)="onsetsLengths$.next($event)"
     ></app-audio-picker>
   </fieldset>
   <fieldset>

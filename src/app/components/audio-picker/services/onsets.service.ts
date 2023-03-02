@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 // @ts-ignore
-import { from, switchMap } from 'rxjs';
-import { simpleMp3 } from 'simple-mp3';
+import { from, map, Observable, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -19,9 +18,10 @@ export class OnsetsService {
     );
   }
 
-  splitFile(file: File) {
+  analyzeFile(file: File): Observable<number[]> {
     return from(this.split(file)).pipe(
-      switchMap((res) => from(this.encode(res)))
+      map((res) => this.measureSlices(res)),
+      tap((onsets) => console.info('onsets analyzed', onsets))
     );
   }
 
@@ -58,46 +58,21 @@ export class OnsetsService {
       },
     });
     this.audioWorker.postMessage({
-      request: 'analyse',
+      request: 'analyze',
       audio: audioArray,
     });
 
     return promise;
   }
 
-  private async encode(result: { sampleRate: number; slices: any[] }) {
-    const buffers: AudioBuffer[] = [];
-
-    for (let i = 0; i < result.slices.length; i++) {
-      let buffer = this.audioCtx.createBuffer(
-        1,
-        result.slices[i].length,
-        result.sampleRate
-      );
-      let data = buffer.getChannelData(0);
-      for (let j = 0; j < result.slices[i].length; j++)
-        data[j] = result.slices[i][j];
-      buffers.push(buffer);
-    }
-
-    let slices = buffers.map((sliceBuffer) => {
-      const numberOfChannels = sliceBuffer.numberOfChannels;
-      const channelData: Float32Array[] = [];
-      for (let i = 0; i < numberOfChannels; ++i) {
-        channelData.push(sliceBuffer.getChannelData(i));
-      }
-      // TODO: Try to use FFmpeg 'ffmpeg -i input.raw -acodec libmp3 output.mp3'
-      const mp3Data = simpleMp3({
-        channelData,
-        sampleRate: sliceBuffer.sampleRate,
-      });
-      return new Blob(mp3Data, { type: 'audio/mpeg' });
-    });
-
-    return slices;
+  private measureSlices(result: {
+    sampleRate: number;
+    slices: any[];
+  }): number[] {
+    return result.slices.map((slice) => slice.length / result.sampleRate);
   }
 
-  private async decodeBuffer(arrayBuffer: ArrayBuffer) {
+  private async decodeBuffer(arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
     return new Promise<AudioBuffer>((resolve, reject) => {
       this.audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
     });

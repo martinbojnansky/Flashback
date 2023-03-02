@@ -12,7 +12,7 @@ import { VideoEditorComponent } from 'src/app/components/video-editor/video-edit
   imports: [CommonModule, AudioPickerComponent, VideoEditorComponent],
 })
 export class ProjectViewComponent implements OnDestroy {
-  readonly audioSlices$ = new BehaviorSubject<Blob[]>([]);
+  readonly onsetsLengths$ = new BehaviorSubject<number[]>([]);
   readonly videos$ = new BehaviorSubject<any[]>([]);
 
   private readonly destroyed$ = new Subject<boolean>();

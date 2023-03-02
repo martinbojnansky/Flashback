@@ -21,7 +21,7 @@ import { OnsetsService } from './services/onsets.service';
 })
 export class AudioPickerComponent implements OnDestroy {
   @Output()
-  readonly completed = new EventEmitter<Blob[]>();
+  readonly analyzed = new EventEmitter<number[]>();
 
   readonly busy$ = new BehaviorSubject<boolean>(false);
 
@@ -43,10 +43,10 @@ export class AudioPickerComponent implements OnDestroy {
     if (file) {
       this.busy$.next(true);
       this.onsetsService
-        .splitFile(file)
+        .analyzeFile(file)
         .pipe(takeUntil(this.destroyed$))
         .subscribe({
-          next: (blobs) => this.completed.emit(blobs),
+          next: (slices) => this.analyzed.emit(slices),
           complete: () => this.busy$.next(false),
         });
     }
