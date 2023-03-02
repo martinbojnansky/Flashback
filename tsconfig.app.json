@@ -6,7 +6,8 @@
     "types": [
       "node"
     ],
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "skipLibCheck": true
   },
   "files": [
     "src/main.ts"

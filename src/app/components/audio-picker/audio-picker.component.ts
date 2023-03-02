@@ -51,6 +51,7 @@ export class AudioPickerComponent implements OnDestroy {
         .subscribe({
           next: (slices) => {
             this.analyzed.emit(slices);
+            this.busy$.next(false);
             this.msg$.next(`${slices.length} onsets`);
           },
           error: (err) => {

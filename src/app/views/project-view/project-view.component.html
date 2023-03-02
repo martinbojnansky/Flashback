@@ -1,29 +1,31 @@
-<section>
-  <fieldset class="timeline-fieldset">
-    <legend>Timeline</legend>
-    <ng-container *ngIf="videos$ | async as videos">
-      <fieldset *ngFor="let video of videos; let i = index">
-        <legend>#{{ i }}</legend>
-        <app-video-editor></app-video-editor>
-      </fieldset>
-    </ng-container>
-    <button (click)="addVideo().subscribe()">Add video</button>
-  </fieldset>
+<section class="section section--horizontal section--top">
+  <section class="section section--vertical section--left">
+    <fieldset>
+      <legend>Audio</legend>
+      <app-audio-picker
+        (analyzed)="onsetsLengths$.next($event)"
+      ></app-audio-picker>
+    </fieldset>
+    <fieldset class="fieldset--stretch">
+      <legend>Editor</legend>
+      <app-video-editor></app-video-editor>
+    </fieldset>
+  </section>
+  <section class="section section--vertical section--right">
+    <fieldset>
+      <legend>Export</legend>
+      <button>1080p Landscape MP4</button>
+      <button>1080p Portrait MP4</button>
+    </fieldset>
+    <fieldset>
+      <legend>Preview</legend>
+      <video id="preview" autoplay loop controls></video>
+    </fieldset>
+  </section>
 </section>
-<section>
+<section class="section section--vertical section--bottom">
   <fieldset>
-    <legend>Audio</legend>
-    <app-audio-picker
-      (analyzed)="onsetsLengths$.next($event)"
-    ></app-audio-picker>
-  </fieldset>
-  <fieldset>
-    <legend>Preview</legend>
-    <video id="preview" autoplay loop controls></video>
-  </fieldset>
-  <fieldset>
-    <legend>Export</legend>
-    <button>1080p Landscape MP4</button>
-    <button>1080p Portrait MP4</button>
+    <legend>Timeline</legend>
+    <app-timeline [audioSlices]="onsetsLengths$ | async"></app-timeline>
   </fieldset>
 </section>

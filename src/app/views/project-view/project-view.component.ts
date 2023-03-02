@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Subject, take, takeUntil, tap } from 'rxjs';
 import { AudioPickerComponent } from 'src/app/components/audio-picker/audio-picker.component';
+import { TimelineComponent } from 'src/app/components/timeline/timeline.component';
 import { VideoEditorComponent } from 'src/app/components/video-editor/video-editor.component';
 
 @Component({
@@ -9,7 +10,12 @@ import { VideoEditorComponent } from 'src/app/components/video-editor/video-edit
   templateUrl: './project-view.component.html',
   styleUrls: ['./project-view.component.scss'],
   standalone: true,
-  imports: [CommonModule, AudioPickerComponent, VideoEditorComponent],
+  imports: [
+    CommonModule,
+    AudioPickerComponent,
+    VideoEditorComponent,
+    TimelineComponent,
+  ],
 })
 export class ProjectViewComponent implements OnDestroy {
   readonly onsetsLengths$ = new BehaviorSubject<number[]>([]);
