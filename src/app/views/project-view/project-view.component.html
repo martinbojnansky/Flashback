@@ -1,13 +1,11 @@
-<section class="section section--horizontal section--top">
-  <section class="section section--vertical section--left">
-    <!-- audio -->
-    <fieldset class="fieldset--audio">
-      <legend>Audio</legend>
-      <app-audio-picker
-        (picked)="audioFile$.next($event)"
-        (analyzed)="onsetsLengths$.next($event)"
-      ></app-audio-picker>
-    </fieldset>
+<!-- app bar -->
+<section class="section section--top">
+  <fieldset class="fieldset--appbar">
+    <legend>Flashback</legend>
+  </fieldset>
+</section>
+<section class="section section--center">
+  <section class="section section--center-left">
     <!-- editor -->
     <fieldset class="fieldset--stretch" class="fieldset--editor">
       <legend>Editor</legend>
@@ -17,12 +15,7 @@
       ></app-video-editor>
     </fieldset>
   </section>
-  <section class="section section--vertical section--right">
-    <!-- export -->
-    <fieldset>
-      <legend>Export</legend>
-      <button>1080p Landscape MP4</button>
-    </fieldset>
+  <section class="section section--center-right">
     <!-- preview -->
     <fieldset class="fieldset--preview">
       <legend>Preview</legend>
@@ -30,12 +23,13 @@
     </fieldset>
   </section>
 </section>
-<section class="section section--vertical section--bottom">
+<section class="section section--bottom">
   <!-- timeline -->
   <fieldset class="fieldset--timeline">
     <legend>Timeline</legend>
     <app-timeline
-      [audios]="onsetsLengths$ | async"
+      *ngIf="(onsetsLengths$ | async)?.length; else noAudioTemplate"
+      [onsetLengths]="onsetsLengths$ | async"
       [videos]="videos$ | async"
       [selectedVideo]="(selectedVideo$ | async)?.id || null"
       (videoAdded)="addVideo($event).subscribe()"
@@ -43,5 +37,11 @@
       (videoUpdated)="updateVideo($event).subscribe()"
       (itemSelected)="selectVideo($event).subscribe()"
     ></app-timeline>
+    <ng-template #noAudioTemplate>
+      <app-audio-picker
+        (picked)="audioFile$.next($event)"
+        (analyzed)="updateOnsetLengths($event)"
+      ></app-audio-picker>
+    </ng-template>
   </fieldset>
 </section>

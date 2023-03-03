@@ -1,5 +1,5 @@
 :host {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
+  flex-direction: column;
+  align-self: flex-start;
 }

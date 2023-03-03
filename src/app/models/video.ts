@@ -6,9 +6,9 @@ export interface Video {
   endIndex: number;
   startTime: number;
   endTime: number;
-  length: number;
+  duration: number;
   file?: File;
-  trimFrom?: number;
+  trimStart?: number;
   url?: string;
   safeUrl?: SafeUrl;
 }

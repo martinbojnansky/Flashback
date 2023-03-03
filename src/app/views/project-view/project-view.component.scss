@@ -11,26 +11,24 @@
 
 .section {
   display: flex;
-
-  &--horizontal {
-    flex-direction: row;
-    flex-wrap: wrap-reverse;
-  }
-
-  &--vertical {
-    flex-direction: column;
-  }
-
-  &--left {
-    flex: 1 1 40%;
-  }
-
-  &--right {
-    flex: 1 1 60%;
-  }
+  flex-direction: column;
 
   &--top {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
+  }
+
+  &--center {
+    flex: 0 1 auto;
+    flex-direction: row;
+    flex-wrap: wrap-reverse;
+
+    &-left {
+      flex: 1 1 40%;
+    }
+
+    &-right {
+      flex: 1 1 60%;
+    }
   }
 
   &--bottom {
@@ -38,20 +36,24 @@
   }
 }
 
-.fieldset--audio {
-  @include fieldsetColor(coral);
-}
+.fieldset {
+  &--appbar {
+    @include fieldsetColor(var(--color--accent));
+    flex: 0 0 auto;
+  }
 
-.fieldset--editor {
-  @include fieldsetColor(var(--color--accent));
-  flex: 1 1 auto;
-}
+  &--editor {
+    @include fieldsetColor(fuchsia);
+    flex: 1 1 auto;
+  }
 
-.fieldset--preview {
-  @include fieldsetColor(chartreuse);
-  flex: 1 1 auto;
-}
+  &--preview {
+    @include fieldsetColor(chartreuse);
+    flex: 1 1 auto;
+  }
 
-.fieldset--timeline {
-  @include fieldsetColor(gold);
+  &--timeline {
+    @include fieldsetColor(gold);
+    flex: 1 1 auto;
+  }
 }

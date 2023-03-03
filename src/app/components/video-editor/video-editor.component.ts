@@ -11,7 +11,16 @@ import {
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
-import { BehaviorSubject, map, Subject, take, takeUntil } from 'rxjs';
+import {
+  BehaviorSubject,
+  combineLatest,
+  map,
+  ReplaySubject,
+  Subject,
+  take,
+  takeUntil,
+  tap,
+} from 'rxjs';
 import { Video } from 'src/app/models/video';
 
 @Component({
@@ -32,9 +41,13 @@ export class VideoEditorComponent implements OnDestroy {
   readonly videoChanged = new EventEmitter<Video>();
 
   @ViewChild('player')
-  player!: ElementRef<HTMLVideoElement>;
+  set player(value: ElementRef<HTMLVideoElement> | null) {
+    if (value) this.player$.next(value);
+  }
 
   readonly video$ = new BehaviorSubject<Video | null>(null);
+
+  private readonly player$ = new ReplaySubject<ElementRef<HTMLVideoElement>>(1);
 
   private readonly destroyed$ = new Subject<boolean>();
 
@@ -59,7 +72,7 @@ export class VideoEditorComponent implements OnDestroy {
           const newVideo = this.getVideoPatch(
             video,
             file,
-            this.video?.trimFrom
+            this.video?.trimStart
           );
           console.info('video file updated', newVideo);
           this.videoChanged.emit(newVideo);
@@ -69,16 +82,16 @@ export class VideoEditorComponent implements OnDestroy {
     );
   }
 
-  trim(from: number) {
-    return this.video$.pipe(
+  trimStart(start: number) {
+    return combineLatest([this.player$, this.video$]).pipe(
       take(1),
-      map((video) => {
+      map(([player, video]) => {
         if (!video) {
           return;
         }
-        this.player.nativeElement.pause();
-        this.player.nativeElement.currentTime = from;
-        const newVideo = this.getVideoPatch(video, video.file, from);
+        player.nativeElement.pause();
+        player.nativeElement.currentTime = start;
+        const newVideo = this.getVideoPatch(video, video.file, start);
         console.info('video start trimmed', newVideo);
         this.videoChanged.emit(newVideo);
       }),
@@ -86,26 +99,40 @@ export class VideoEditorComponent implements OnDestroy {
     );
   }
 
-  jumpTo(time: number) {
-    this.player.nativeElement.pause();
-    this.player.nativeElement.currentTime = time || 0;
+  jumpTo(time?: number | null, pause?: boolean) {
+    return this.player$.pipe(
+      take(1),
+      tap((player) => {
+        if (pause) player.nativeElement.pause();
+        if (time) player.nativeElement.currentTime = time;
+      }),
+      takeUntil(this.destroyed$)
+    );
+  }
+
+  jumpToTrimStart(video: Video) {
+    return this.jumpTo(video.trimStart, true);
+  }
+
+  jumpToTrimEnd(video: Video) {
+    return this.jumpTo((video.trimStart || 0) + video.duration, true);
   }
 
   private getVideoPatch(
     video: Video,
     file: File | undefined,
-    trimFrom: number | undefined
+    trimStart: number | undefined
   ): Video {
     if (video.url) {
       URL.revokeObjectURL(video.url);
     }
 
-    trimFrom = trimFrom || 0;
+    trimStart = trimStart || 0;
     const url = file ? URL.createObjectURL(file) : '';
     return {
       ...video,
       ...{ file },
-      ...{ trimFrom },
+      ...{ trimStart },
       ...{ url },
       safeUrl: this.sanitizer.bypassSecurityTrustResourceUrl(url),
     };

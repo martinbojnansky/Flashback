@@ -27,29 +27,11 @@ fieldset {
 }
 
 .file-upload {
-  width: 100%;
-  background-color: var(--color--darker);
-
   label {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
     cursor: pointer;
-  }
-
-  label span[role='button'] {
-    flex: 0 0 auto;
-    margin-right: 0.5rem;
 
     @include button();
     @include buttonColor(var(--color--light), var(--color--darkest));
-  }
-
-  label span[role='contentinfo'] {
-    flex: 1 1 auto;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
   }
 
   label + input[type='file'] {

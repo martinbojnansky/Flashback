@@ -10,7 +10,13 @@ import {
   ViewChild,
 } from '@angular/core';
 import * as moment from 'moment';
-import { BehaviorSubject, combineLatest, Subject, takeUntil } from 'rxjs';
+import {
+  BehaviorSubject,
+  combineLatest,
+  ReplaySubject,
+  Subject,
+  takeUntil,
+} from 'rxjs';
 import { Video } from 'src/app/models/video';
 import { uuid } from 'src/app/utils/uuid';
 import {
@@ -31,8 +37,8 @@ import {
 })
 export class TimelineComponent implements AfterContentInit, OnDestroy {
   @Input()
-  set audios(value: number[] | null) {
-    this.audios$.next(value || []);
+  set onsetLengths(value: number[] | null) {
+    this.onsetLengths$.next(value || []);
   }
 
   @Input()
@@ -58,9 +64,15 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   readonly videoUpdated = new EventEmitter<Partial<Video>>();
 
   @ViewChild('timelineContainer')
-  timelineContainer!: ElementRef<HTMLDivElement>;
+  set timelineContainer(value: ElementRef<HTMLDivElement> | null) {
+    if (value) this.timelineContainer$.next(value);
+  }
 
-  private readonly audios$ = new BehaviorSubject<number[]>([]);
+  readonly timelineContainer$ = new ReplaySubject<ElementRef<HTMLDivElement>>(
+    1
+  );
+
+  private readonly onsetLengths$ = new BehaviorSubject<number[]>([]);
   private readonly videos$ = new BehaviorSubject<Video[]>([]);
   private readonly selectedVideo$ = new BehaviorSubject<string | null>(null);
 
@@ -72,11 +84,21 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   constructor() {}
 
   ngAfterContentInit(): void {
-    combineLatest([this.videos$, this.audios$, this.selectedVideo$])
+    combineLatest([
+      this.timelineContainer$,
+      this.videos$,
+      this.onsetLengths$,
+      this.selectedVideo$,
+    ])
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
-        next: ([videos, audios, selectedVideo]) =>
-          this.renderTimeline(videos, audios, selectedVideo),
+        next: ([timelineContainer, videos, onsetLengths, selectedVideo]) =>
+          this.renderTimeline(
+            timelineContainer,
+            videos,
+            onsetLengths,
+            selectedVideo
+          ),
       });
   }
 
@@ -85,22 +107,21 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   }
 
   private renderTimeline(
+    timelineContainer: ElementRef<HTMLDivElement>,
     videos: Video[],
-    audios: number[],
+    onsetLengths: number[],
     selectedVideo: string | null
   ) {
-    if (!this.timelineContainer) {
-      return;
-    }
+    console.log(videos, onsetLengths, selectedVideo);
 
-    const data = this.createTimelineData(audios, videos);
+    const data = this.createTimelineData(onsetLengths, videos);
 
     if (!this.timeline) {
       console.info('rendering timeline for the first time', data.items);
       this.timeline = this.createTimeline(
-        this.timelineContainer.nativeElement,
+        timelineContainer.nativeElement,
         data,
-        audios
+        onsetLengths
       );
     } else {
       console.info('re-rendering timeline', data.items);
@@ -112,13 +133,13 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     }
   }
 
-  private createTimelineData(audios: number[], videos: Video[]) {
+  private createTimelineData(onsetLengths: number[], videos: Video[]) {
     const groups: DataGroupCollectionType = [
       { id: 1, content: 'VIDEO' },
       { id: 2, content: 'AUDIO' },
     ];
     const items: DataItemCollectionType = [];
-    audios.forEach((audio, i) => {
+    onsetLengths.forEach((audio, i) => {
       items.push({
         id: uuid(),
         content: `A${i + 1} (${audio.toFixed(2)}s)`,
@@ -151,7 +172,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
       groups: DataGroupCollectionType;
       items: DataItemCollectionType;
     },
-    audios: number[]
+    onsetLengths: number[]
   ) {
     const timeline = new Timeline(
       timelineContainerElement,
@@ -166,13 +187,13 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
           return date;
         },
         min: this.indexToDate(0),
-        max: this.indexToDate(audios.length),
+        max: this.indexToDate(onsetLengths.length),
         showMajorLabels: false,
         showMinorLabels: false,
-        onAdd: (item) => this.onAddItem(item, audios),
+        onAdd: (item) => this.onAddItem(item, onsetLengths),
         onRemove: (item) => this.onRemoveItem(item),
-        onMove: (item) => this.onUpdateItem(item, audios),
-        onUpdate: (item) => this.onUpdateItem(item, audios),
+        onMove: (item) => this.onUpdateItem(item, onsetLengths),
+        onUpdate: (item) => this.onUpdateItem(item, onsetLengths),
       }
     );
 
@@ -184,13 +205,13 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     return timeline;
   }
 
-  private onAddItem(item: TimelineItem, audios: number[]) {
+  private onAddItem(item: TimelineItem, onsetLengths: number[]) {
     if (item.group === 1) {
       const video: Video = {
         ...this.getVideoPatch(
           item.start as Date,
           moment(item.start).add(1, 'second').toDate(),
-          audios
+          onsetLengths
         ),
         id: uuid(),
       };
@@ -208,10 +229,14 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     }
   }
 
-  private onUpdateItem(item: TimelineItem, audios: number[]) {
+  private onUpdateItem(item: TimelineItem, onsetLengths: number[]) {
     if (item.group === 1) {
       const video: Partial<Video> = {
-        ...this.getVideoPatch(item.start as Date, item.end as Date, audios),
+        ...this.getVideoPatch(
+          item.start as Date,
+          item.end as Date,
+          onsetLengths
+        ),
         id: item.id as string,
       };
       console.info('updating video item', item, video);
@@ -219,18 +244,18 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     }
   }
 
-  private getVideoPatch(start: Date, end: Date, audios: number[]) {
+  private getVideoPatch(start: Date, end: Date, onsetLengths: number[]) {
     const startIndex = this.dateToIndex(start);
     const endIndex = this.dateToIndex(end);
-    const startTime = this.indexToTime(startIndex, audios);
-    const endTime = this.indexToTime(endIndex, audios);
-    const length = endTime - startTime;
+    const startTime = this.indexToTime(startIndex, onsetLengths);
+    const endTime = this.indexToTime(endIndex, onsetLengths);
+    const duration = endTime - startTime;
     return {
       ...{ startIndex },
       ...{ startTime },
       ...{ endIndex },
       ...{ endTime },
-      ...{ length },
+      ...{ duration },
     };
   }
 
@@ -242,10 +267,10 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     return moment(date).diff(this.dateRef) / 1000;
   }
 
-  private indexToTime(index: number, audios: number[]): number {
+  private indexToTime(index: number, onsetLengths: number[]): number {
     let time = 0;
     for (let i = 0; i <= index; i++) {
-      time += audios[i - 1] || 0;
+      time += onsetLengths[i - 1] || 0;
     }
     return time;
   }

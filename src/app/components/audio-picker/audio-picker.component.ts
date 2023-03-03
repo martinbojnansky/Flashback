@@ -26,9 +26,9 @@ export class AudioPickerComponent implements OnDestroy {
   @Output()
   readonly analyzed = new EventEmitter<number[]>();
 
-  readonly msg$ = new BehaviorSubject<string>('');
+  readonly msg$ = new BehaviorSubject<string>('some music would help, right?');
 
-  readonly file$ = new BehaviorSubject<File | null>(null);
+  readonly busy$ = new BehaviorSubject<boolean>(false);
 
   private readonly destroyed$ = new Subject<boolean>();
 
@@ -48,18 +48,21 @@ export class AudioPickerComponent implements OnDestroy {
     this.picked.emit(file);
 
     if (file) {
-      this.file$.next(file);
-      this.msg$.next('analyzing...');
+      this.msg$.next('analyzing the audio, grab a coffee or something...');
+      this.busy$.next(true);
       this.onsetsService
         .analyzeFile(file)
         .pipe(takeUntil(this.destroyed$))
         .subscribe({
           next: (slices) => {
+            this.busy$.next(false);
             this.analyzed.emit(slices);
             this.msg$.next(`[${slices.length} onsets] ${file.name}`);
           },
           error: (err) => {
+            console.error('failed analyzing the audio', err);
             this.msg$.next('error!');
+            this.busy$.next(false);
           },
         });
     }
