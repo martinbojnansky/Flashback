@@ -51,6 +51,8 @@ export class VideoEditorComponent implements OnDestroy {
 
   private readonly destroyed$ = new Subject<boolean>();
 
+  private shouldAutopause: boolean = false;
+
   constructor(protected sanitizer: DomSanitizer) {}
 
   ngOnDestroy(): void {
@@ -115,7 +117,29 @@ export class VideoEditorComponent implements OnDestroy {
   }
 
   jumpToTrimEnd(video: Video) {
-    return this.jumpTo((video.trimStart || 0) + video.duration, true);
+    return this.jumpTo(video.trimStart + video.duration, true);
+  }
+
+  onTimeUpdate(player: HTMLVideoElement, video: Video) {
+    // In case the video is playing in trim region, pause it at its end.
+    const trimEnd = video.trimStart + video.duration;
+    const afterTrimEnd = player.currentTime >= trimEnd;
+    if (this.shouldAutopause && afterTrimEnd) {
+      player.pause();
+      player.currentTime = trimEnd;
+      this.shouldAutopause = false;
+    } else {
+      const playing = !!(
+        player.currentTime > 0 &&
+        !player.paused &&
+        !player.ended &&
+        player.readyState > 2
+      );
+      const afterTrimStart = player.currentTime > video.trimStart;
+      const beforeTrimEnd = player.currentTime < trimEnd;
+      const withinTrimRegion = afterTrimStart && beforeTrimEnd;
+      this.shouldAutopause = playing && withinTrimRegion;
+    }
   }
 
   private getVideoPatch(

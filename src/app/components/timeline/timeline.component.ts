@@ -214,6 +214,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
           onsetLengths
         ),
         id: uuid(),
+        trimStart: 0,
       };
       console.info('adding video item', item, video);
       this.videoAdded.emit(video);

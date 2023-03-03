@@ -18,6 +18,7 @@
       (keydown.\)="trimStart(player.currentTime).subscribe()"
       (keydown.[)="jumpToTrimStart(video).subscribe()"
       (keydown.])="jumpToTrimEnd(video).subscribe()"
+      (timeupdate)="onTimeUpdate(player, video)"
     ></video>
     <div class="controls">
       <button (click)="jumpToTrimStart(video).subscribe()">
@@ -28,7 +29,7 @@
       </button>
     </div>
     <div>
-      start: {{ video.trimStart?.toFixed(2) }}, duration:
+      start: {{ video.trimStart.toFixed(2) }}, duration:
       {{ video.duration.toFixed(2) }}
     </div>
   </ng-container>
