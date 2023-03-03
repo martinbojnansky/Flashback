@@ -11,7 +11,10 @@
     <!-- editor -->
     <fieldset class="fieldset--stretch" class="fieldset--editor">
       <legend>Editor</legend>
-      <app-video-editor [video]="selectedVideo$ | async"></app-video-editor>
+      <app-video-editor
+        [video]="selectedVideo$ | async"
+        (videoChanged)="updateVideo($event).subscribe()"
+      ></app-video-editor>
     </fieldset>
   </section>
   <section class="section section--vertical section--right">
@@ -19,7 +22,6 @@
     <fieldset>
       <legend>Export</legend>
       <button>1080p Landscape MP4</button>
-      <button>1080p Portrait MP4</button>
     </fieldset>
     <!-- preview -->
     <fieldset class="fieldset--preview">
@@ -35,6 +37,7 @@
     <app-timeline
       [audios]="onsetsLengths$ | async"
       [videos]="videos$ | async"
+      [selectedVideo]="(selectedVideo$ | async)?.id || null"
       (videoAdded)="addVideo($event).subscribe()"
       (videoRemoved)="removeVideo($event).subscribe()"
       (videoUpdated)="updateVideo($event).subscribe()"

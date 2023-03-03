@@ -1,12 +1,42 @@
 <ng-container *ngIf="video$ | async as video">
-  <input type="file" (change)="selectFile($event)" />
-  <video
-    #player
-    [src]="src$ | async"
-    loop
-    controls
-    (keydown.[)="trim(player.currentTime)"
-  ></video>
-  <button (click)="trim(player.currentTime)">Trim Start</button>
-  <span>Start: {{ startControl.value }}</span>
+  <div class="file-upload" *ngIf="!video?.file">
+    <label for="video-file-upload">
+      <span role="button">Choose File</span>
+      <span *ngIf="video.file" [title]="video.file.name" role="contentinfo">{{
+        videoFileUpload.files?.[0]?.name || ''
+      }}</span>
+    </label>
+    <input
+      #videoFileUpload
+      id="video-file-upload"
+      type="file"
+      (change)="selectFile($event).subscribe()"
+      accept="video/*"
+    />
+  </div>
+  <ng-container *ngIf="video?.file">
+    <video
+      #player
+      loop
+      controls
+      [src]="video.safeUrl"
+      (keydown..)="trim(player.currentTime).subscribe()"
+      (keydown.[)="jumpTo(video.trimFrom || 0)"
+      (keydown.])="jumpTo((video.trimFrom || 0) + video.length)"
+    ></video>
+    <div class="controls">
+      <button (click)="jumpTo(video.trimFrom || 0)">jump to start [</button>
+      <button (click)="jumpTo((video.trimFrom || 0) + video.length)">
+        jump to end ]
+      </button>
+      <button (click)="trim(player.currentTime).subscribe()">
+        trim start .
+      </button>
+    </div>
+    <div>
+      start: {{ video.startTime.toFixed(2) }}, end:
+      {{ (video.startTime + video.length).toFixed(2) }}, length:
+      {{ video.length.toFixed(2) }}
+    </div>
+  </ng-container>
 </ng-container>

@@ -61,11 +61,12 @@ export class ProjectViewComponent implements OnDestroy {
       take(1),
       tap((videos) => {
         const index = videos.findIndex((v) => v.id === video.id);
-        videos[index] = {
+        const newVideo = (videos[index] = {
           ...videos[index],
           ...video,
-        };
+        });
         this.videos$.next([...videos]);
+        this.selectedVideo$.next(newVideo);
       }),
       takeUntil(this.destroyed$)
     );

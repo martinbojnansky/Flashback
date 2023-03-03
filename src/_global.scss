@@ -1,0 +1,41 @@
+:root {
+  --font-family: 'Consolas';
+  --color--darkest: black;
+  --color--dark: #444;
+  --color--darker: #666;
+  --color--light: gainsboro;
+  --color--lightest: white;
+  --color--accent: cyan;
+  --border-width: 2px;
+}
+
+@mixin button() {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  font-family: var(--font-family);
+  font-weight: bold;
+  font-size: smaller;
+}
+
+@mixin buttonColor($backgroundColor, $textColor: var(--color--darkest)) {
+  background-color: $backgroundColor;
+  color: $textColor;
+  border-right: var(--border-width) solid $textColor;
+  border-bottom: var(--border-width) solid $textColor;
+
+  &:active {
+    border-left: var(--border-width) solid $textColor;
+    border-top: var(--border-width) solid $textColor;
+    border-right: 0;
+    border-bottom: 0;
+  }
+}
+
+@mixin fieldsetColor($color) {
+  border-color: $color;
+
+  legend {
+    color: $color;
+    font-weight: bold;
+  }
+}

@@ -24,6 +24,7 @@
       background: gold;
       border-color: gold;
       color: black;
+      border-radius: 0;
 
       &:hover {
         cursor: pointer;
@@ -31,8 +32,8 @@
     }
 
     &.vis-editable.vis-selected {
-      background: cyan;
-      border-color: cyan;
+      background: var(--color--accent);
+      border-color: var(--color--accent);
     }
 
     &.vis-readonly,
@@ -40,6 +41,7 @@
       background: coral;
       border-color: coral;
       color: white;
+      border-radius: 0;
     }
   }
 }

@@ -1,6 +1,14 @@
-<input
-  *ngIf="(busy$ | async) === false"
-  type="file"
-  (change)="selectFile($event)"
-/>
-<span>{{ msg$ | async }}</span>
+<div class="file-upload">
+  <label for="audio-file-upload">
+    <span role="button">Choose File</span>
+    <span *ngIf="msg$ | async as msg" [title]="msg" role="contentinfo">{{
+      msg
+    }}</span>
+  </label>
+  <input
+    id="audio-file-upload"
+    type="file"
+    (change)="selectFile($event)"
+    accept="audio/*"
+  />
+</div>

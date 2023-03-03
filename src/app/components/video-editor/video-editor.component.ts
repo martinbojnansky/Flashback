@@ -2,14 +2,17 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  EventEmitter,
   Input,
   OnDestroy,
+  Output,
+  ViewChild,
 } from '@angular/core';
-import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { DomSanitizer } from '@angular/platform-browser';
+import { BehaviorSubject, map, Subject, take, takeUntil } from 'rxjs';
 import { Video } from 'src/app/models/video';
-import { FfmpegService } from './services/ffmpeg.service';
 
 @Component({
   selector: 'app-video-editor',
@@ -17,7 +20,6 @@ import { FfmpegService } from './services/ffmpeg.service';
   styleUrls: ['./video-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  providers: [FfmpegService],
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
 })
 export class VideoEditorComponent implements OnDestroy {
@@ -26,44 +28,86 @@ export class VideoEditorComponent implements OnDestroy {
     this.video$.next(value);
   }
 
+  @Output()
+  readonly videoChanged = new EventEmitter<Video>();
+
+  @ViewChild('player')
+  player!: ElementRef<HTMLVideoElement>;
+
   readonly video$ = new BehaviorSubject<Video | null>(null);
-
-  readonly src$ = new Subject<SafeUrl>();
-
-  readonly startControl = new FormControl<number>(0);
 
   private readonly destroyed$ = new Subject<boolean>();
 
-  constructor(
-    protected ffmpegService: FfmpegService,
-    protected sanitizer: DomSanitizer
-  ) {}
+  constructor(protected sanitizer: DomSanitizer) {}
 
   ngOnDestroy(): void {
     this.destroyed$.next(true);
   }
 
   selectFile(event: Event) {
-    const file: File = (event.target as EventTarget & { files: FileList })
-      .files?.[0];
+    return this.video$.pipe(
+      take(1),
+      map((video) => {
+        if (!video) {
+          return;
+        }
 
-    if (file) {
-      this.src$.next(
-        this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(file))
-      );
-      // this.ffmpegService
-      //   .trimFile(file, '00:00:02', '00:00:05')
-      //   .pipe(takeUntil(this.destroyed$))
-      //   .subscribe({
-      //     next: (url) => {
-      //       // TODO: Revoke old url
-      //       this.src$.next(this.sanitizer.bypassSecurityTrustUrl(url));
-      //     },
-      //   });
-    }
+        const file: File = (event.target as EventTarget & { files: FileList })
+          .files?.[0];
+
+        if (file) {
+          const newVideo = this.getVideoPatch(
+            video,
+            file,
+            this.video?.trimFrom
+          );
+          console.info('video file updated', newVideo);
+          this.videoChanged.emit(newVideo);
+        }
+      }),
+      takeUntil(this.destroyed$)
+    );
   }
 
-  trim(time: number) {
-    this.startControl.patchValue(time);
+  trim(from: number) {
+    return this.video$.pipe(
+      take(1),
+      map((video) => {
+        if (!video) {
+          return;
+        }
+        this.player.nativeElement.pause();
+        this.player.nativeElement.currentTime = from;
+        const newVideo = this.getVideoPatch(video, video.file, from);
+        console.info('video start trimmed', newVideo);
+        this.videoChanged.emit(newVideo);
+      }),
+      takeUntil(this.destroyed$)
+    );
+  }
+
+  jumpTo(time: number) {
+    this.player.nativeElement.pause();
+    this.player.nativeElement.currentTime = time || 0;
+  }
+
+  private getVideoPatch(
+    video: Video,
+    file: File | undefined,
+    trimFrom: number | undefined
+  ): Video {
+    if (video.url) {
+      URL.revokeObjectURL(video.url);
+    }
+
+    trimFrom = trimFrom || 0;
+    const url = file ? URL.createObjectURL(file) : '';
+    return {
+      ...video,
+      ...{ file },
+      ...{ trimFrom },
+      ...{ url },
+      safeUrl: this.sanitizer.bypassSecurityTrustResourceUrl(url),
+    };
   }
 }

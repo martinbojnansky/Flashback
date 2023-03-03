@@ -40,6 +40,11 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     this.videos$.next(value || []);
   }
 
+  @Input()
+  set selectedVideo(value: string | null) {
+    this.selectedVideo$.next(value);
+  }
+
   @Output()
   readonly itemSelected = new EventEmitter<string>();
 
@@ -57,6 +62,7 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
 
   private readonly audios$ = new BehaviorSubject<number[]>([]);
   private readonly videos$ = new BehaviorSubject<Video[]>([]);
+  private readonly selectedVideo$ = new BehaviorSubject<string | null>(null);
 
   private timeline!: Timeline;
   private readonly dateRef = new Date(2023, 1, 1);
@@ -66,10 +72,11 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   constructor() {}
 
   ngAfterContentInit(): void {
-    combineLatest([this.videos$, this.audios$])
+    combineLatest([this.videos$, this.audios$, this.selectedVideo$])
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
-        next: ([videos, audios]) => this.renderTimeline(videos, audios),
+        next: ([videos, audios, selectedVideo]) =>
+          this.renderTimeline(videos, audios, selectedVideo),
       });
   }
 
@@ -77,7 +84,11 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     this.destroyed$.next(true);
   }
 
-  private renderTimeline(videos: Video[], audios: number[]) {
+  private renderTimeline(
+    videos: Video[],
+    audios: number[],
+    selectedVideo: string | null
+  ) {
     if (!this.timelineContainer) {
       return;
     }
@@ -94,6 +105,10 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     } else {
       console.info('re-rendering timeline', data.items);
       this.timeline.setData(data);
+    }
+
+    if (selectedVideo) {
+      this.timeline.setSelection(selectedVideo);
     }
   }
 
@@ -209,11 +224,13 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     const endIndex = this.dateToIndex(end);
     const startTime = this.indexToTime(startIndex, audios);
     const endTime = this.indexToTime(endIndex, audios);
+    const length = endTime - startTime;
     return {
       ...{ startIndex },
       ...{ startTime },
       ...{ endIndex },
       ...{ endTime },
+      ...{ length },
     };
   }
 
