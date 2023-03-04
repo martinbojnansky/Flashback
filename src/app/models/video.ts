@@ -20,61 +20,29 @@ export interface Video {
 export class VideoImpl implements Video {
   readonly id: string;
 
-  get startIndex() {
-    return this._startIndex;
-  }
+  startIndex = 0;
+  endIndex = 0;
+  startTime = 0;
+  endTime = 0;
+  duration = 0;
+  trimStart = 0;
+  file?: File;
+  url?: string;
 
-  get endIndex() {
-    return this._endIndex;
-  }
-
-  get startTime() {
-    return this._startTime;
-  }
-
-  get endTime() {
-    return this._endTime;
-  }
-
-  get duration() {
-    return this._duration;
-  }
-
-  get trimStart() {
-    return this._trimStart;
-  }
-
-  get file() {
-    return this._file;
-  }
-
-  get url() {
-    return this._url;
-  }
-
-  private _startIndex = 0;
-  private _endIndex = 0;
-  private _startTime = 0;
-  private _endTime = 0;
-  private _duration = 0;
-  private _trimStart = 0;
-  private _file?: File;
-  private _url?: string;
-
-  private readonly _onsetLengths: number[];
+  readonly onsetLengths: number[];
 
   constructor(startIndex: number, endIndex: number, onsetLengths: number[]) {
     this.id = uuid();
-    this._onsetLengths = onsetLengths;
+    this.onsetLengths = onsetLengths;
     this.updatePosition(startIndex, endIndex);
   }
 
   updatePosition(startIndex: number, endIndex: number) {
-    this._startIndex = startIndex;
-    this._endIndex = endIndex;
-    this._startTime = indexToTime(this.startIndex, this._onsetLengths);
-    this._endTime = indexToTime(this.endIndex, this._onsetLengths);
-    this._duration = this.endTime - this.startTime;
+    this.startIndex = startIndex;
+    this.endIndex = endIndex;
+    this.startTime = indexToTime(this.startIndex, this.onsetLengths);
+    this.endTime = indexToTime(this.endIndex, this.onsetLengths);
+    this.duration = this.endTime - this.startTime;
     return this;
   }
 
@@ -82,13 +50,13 @@ export class VideoImpl implements Video {
     if (this.url) {
       URL.revokeObjectURL(this.url);
     }
-    this._file = file;
-    this._url = URL.createObjectURL(file);
+    this.file = file;
+    this.url = URL.createObjectURL(file);
     return this;
   }
 
   trim(start: number) {
-    this._trimStart = start;
+    this.trimStart = start;
     return this;
   }
 }

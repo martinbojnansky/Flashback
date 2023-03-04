@@ -6,7 +6,7 @@
       id="video-file-upload"
       type="file"
       (change)="selectFile($event).subscribe()"
-      accept="video/*"
+      accept="video/mp4"
     />
   </div>
   <ng-container *ngIf="video?.file">

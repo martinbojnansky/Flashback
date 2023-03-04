@@ -23,9 +23,8 @@ import { Video } from 'src/app/models/video';
 export class ProjectViewComponent implements OnDestroy {
   readonly audioFile$ = new BehaviorSubject<File | null>(null);
   readonly onsetsLengths$ = new BehaviorSubject<number[]>([
-    // TODO: Use empty array to not skip audio select
-    1.0346666666666666, 1.0453333333333332, 2.08, 1.056, 1.0346666666666666,
-    2.037333333333333, 0.032, 1.0666666666666667, 1.0132291666666666,
+    // 1.0346666666666666, 1.0453333333333332, 2.08, 1.056, 1.0346666666666666,
+    // 2.037333333333333, 0.032, 1.0666666666666667, 1.0132291666666666,
   ]);
 
   readonly videos$ = new BehaviorSubject<Video[]>([]);

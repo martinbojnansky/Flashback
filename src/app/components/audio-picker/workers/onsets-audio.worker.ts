@@ -1,6 +1,20 @@
 /// <reference lib="webworker" />
 
-console.info('loading essentia.wasm');
+const log = (...params: any[]) => {
+  console.info(
+    ...params.flatMap((param) => {
+      switch (typeof param) {
+        case 'object':
+        case 'function':
+          return [param];
+        default:
+          return [`%c${param}`, 'color: grey'];
+      }
+    })
+  );
+};
+
+log('loading essentia.wasm');
 
 // @ts-ignore
 import { Essentia, EssentiaWASM } from 'essentia.js';
@@ -9,7 +23,7 @@ import { PolarFFTWASM } from '../lib/polarFFT.module.js';
 // @ts-ignore
 import { OnsetsWASM } from '../lib/onsets.module.js';
 
-console.info('essentia.wasm loaded');
+log('essentia.wasm loaded');
 
 let essentia: any = null;
 
@@ -37,7 +51,7 @@ try {
 addEventListener('message', ({ data }) => {
   switch (data.request) {
     case 'analyze': {
-      console.info('analyzing audio', data);
+      log('analyzing audio', data);
       // const signal = new Float32Array(data.audio);
       signal = data.audio;
       computeFFT();
@@ -53,7 +67,7 @@ addEventListener('message', ({ data }) => {
     case 'initParams': {
       let [suppliedParamList, newParams] = checkParams(data.params);
       params = { ...params, ...newParams }; // Update existing params obj.
-      console.info(
+      log(
         `updated the following params: ${suppliedParamList.join(',')}`,
         params
       );

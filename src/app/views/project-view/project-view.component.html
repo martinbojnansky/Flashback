@@ -19,7 +19,10 @@
     <!-- preview -->
     <fieldset class="fieldset--preview">
       <legend>Preview</legend>
-      <app-preview [videos]="videos$ | async"></app-preview>
+      <app-preview
+        [audio]="audioFile$ | async"
+        [videos]="videos$ | async"
+      ></app-preview>
     </fieldset>
   </section>
 </section>
