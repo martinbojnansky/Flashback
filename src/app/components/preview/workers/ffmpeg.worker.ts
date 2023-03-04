@@ -73,12 +73,17 @@ const generatePreview = async (
       ffmpeg.FS('writeFile', video.file.name, await fetchFile(video.file));
       const trimmedFileName = `${video.id}.mp4`;
       await ffmpeg.run(
-        '-i',
-        video.file.name,
         '-ss',
         formatTime(video.trimStart),
-        '-to',
-        formatTime(video.trimStart + video.duration),
+        '-accurate_seek',
+        '-i',
+        video.file.name,
+        '-t',
+        formatTime(video.duration),
+        '-c:v',
+        'libx264',
+        '-c:a',
+        'aac',
         '-c',
         'copy',
         trimmedFileName

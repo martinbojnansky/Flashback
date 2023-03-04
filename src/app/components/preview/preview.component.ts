@@ -34,7 +34,7 @@ export class PreviewComponent implements OnInit, OnDestroy {
 
   @Input()
   set videos(value: Video[] | null) {
-    this.videos$.next(value || []);
+    this.videos$.next(value?.sort((a, b) => a.startIndex - b.startIndex) || []);
   }
 
   readonly src$ = new BehaviorSubject<SafeUrl | null>(null);
