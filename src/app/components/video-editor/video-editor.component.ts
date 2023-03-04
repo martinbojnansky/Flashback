@@ -47,6 +47,12 @@ export class VideoEditorComponent implements OnDestroy {
 
   readonly video$ = new BehaviorSubject<Video | null>(null);
 
+  readonly src$ = this.video$.pipe(
+    map((video) =>
+      video?.url ? this.sanitizer.bypassSecurityTrustUrl(video?.url) : null
+    )
+  );
+
   private readonly player$ = new ReplaySubject<ElementRef<HTMLVideoElement>>(1);
 
   private readonly destroyed$ = new Subject<boolean>();
@@ -71,13 +77,9 @@ export class VideoEditorComponent implements OnDestroy {
           .files?.[0];
 
         if (file) {
-          const newVideo = this.getVideoPatch(
-            video,
-            file,
-            this.video?.trimStart
-          );
-          console.info('video file updated', newVideo);
-          this.videoChanged.emit(newVideo);
+          video.updateFile(file);
+          console.info('video file updated', video);
+          this.videoChanged.emit(video);
         }
       }),
       takeUntil(this.destroyed$)
@@ -93,9 +95,9 @@ export class VideoEditorComponent implements OnDestroy {
         }
         player.nativeElement.pause();
         player.nativeElement.currentTime = start;
-        const newVideo = this.getVideoPatch(video, video.file, start);
-        console.info('video start trimmed', newVideo);
-        this.videoChanged.emit(newVideo);
+        const trimmedVideo = video.trim(start);
+        console.info('video start trimmed', trimmedVideo);
+        this.videoChanged.emit(trimmedVideo);
       }),
       takeUntil(this.destroyed$)
     );
@@ -140,25 +142,5 @@ export class VideoEditorComponent implements OnDestroy {
       const withinTrimRegion = afterTrimStart && beforeTrimEnd;
       this.shouldAutopause = playing && withinTrimRegion;
     }
-  }
-
-  private getVideoPatch(
-    video: Video,
-    file: File | undefined,
-    trimStart: number | undefined
-  ): Video {
-    if (video.url) {
-      URL.revokeObjectURL(video.url);
-    }
-
-    trimStart = trimStart || 0;
-    const url = file ? URL.createObjectURL(file) : '';
-    return {
-      ...video,
-      ...{ file },
-      ...{ trimStart },
-      ...{ url },
-      safeUrl: this.sanitizer.bypassSecurityTrustResourceUrl(url),
-    };
   }
 }

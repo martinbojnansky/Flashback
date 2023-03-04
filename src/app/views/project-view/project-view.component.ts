@@ -63,17 +63,27 @@ export class ProjectViewComponent implements OnDestroy {
     );
   }
 
-  updateVideo(video: Partial<Video>) {
+  updateVideo(video: Video) {
     return this.videos$.pipe(
       take(1),
       tap((videos) => {
         const index = videos.findIndex((v) => v.id === video.id);
-        const newVideo = (videos[index] = {
-          ...videos[index],
-          ...video,
-        });
+        const updatedVideo = (videos[index] = video);
         this.videos$.next([...videos]);
-        this.selectedVideo$.next(newVideo);
+        this.selectedVideo$.next(updatedVideo);
+      }),
+      takeUntil(this.destroyed$)
+    );
+  }
+
+  updateVideoPosition(event: [string, number, number]) {
+    return this.videos$.pipe(
+      take(1),
+      tap((videos) => {
+        const index = videos.findIndex((v) => v.id === event[0]);
+        const updatedVideo = videos[index].updatePosition(event[1], event[2]);
+        this.videos$.next([...videos]);
+        this.selectedVideo$.next(updatedVideo);
       }),
       takeUntil(this.destroyed$)
     );

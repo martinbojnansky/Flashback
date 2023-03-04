@@ -17,7 +17,8 @@ import {
   Subject,
   takeUntil,
 } from 'rxjs';
-import { Video } from 'src/app/models/video';
+import { Video, VideoImpl } from 'src/app/models/video';
+import { dateToIndex, indexToDate } from 'src/app/utils/timeline-converters';
 import { uuid } from 'src/app/utils/uuid';
 import {
   DataGroupCollectionType,
@@ -25,6 +26,11 @@ import {
   Timeline,
   TimelineItem,
 } from 'vis-timeline';
+
+enum TimelineGroup {
+  Video = 1,
+  Audio = 2,
+}
 
 @Component({
   selector: 'app-timeline',
@@ -61,24 +67,21 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   readonly videoRemoved = new EventEmitter<string>();
 
   @Output()
-  readonly videoUpdated = new EventEmitter<Partial<Video>>();
+  readonly videoUpdated = new EventEmitter<[string, number, number]>();
 
   @ViewChild('timelineContainer')
   set timelineContainer(value: ElementRef<HTMLDivElement> | null) {
     if (value) this.timelineContainer$.next(value);
   }
 
-  readonly timelineContainer$ = new ReplaySubject<ElementRef<HTMLDivElement>>(
-    1
-  );
-
   private readonly onsetLengths$ = new BehaviorSubject<number[]>([]);
   private readonly videos$ = new BehaviorSubject<Video[]>([]);
   private readonly selectedVideo$ = new BehaviorSubject<string | null>(null);
+  private readonly timelineContainer$ = new ReplaySubject<
+    ElementRef<HTMLDivElement>
+  >(1);
 
   private timeline!: Timeline;
-  private readonly dateRef = new Date(2023, 1, 1);
-
   private readonly destroyed$ = new Subject<boolean>();
 
   constructor() {}
@@ -112,8 +115,6 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
     onsetLengths: number[],
     selectedVideo: string | null
   ) {
-    console.log(videos, onsetLengths, selectedVideo);
-
     const data = this.createTimelineData(onsetLengths, videos);
 
     if (!this.timeline) {
@@ -135,8 +136,8 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
 
   private createTimelineData(onsetLengths: number[], videos: Video[]) {
     const groups: DataGroupCollectionType = [
-      { id: 1, content: 'VIDEO' },
-      { id: 2, content: 'AUDIO' },
+      { id: TimelineGroup.Video, content: 'VIDEO' },
+      { id: TimelineGroup.Audio, content: 'AUDIO' },
     ];
     const items: DataItemCollectionType = [];
     onsetLengths.forEach((audio, i) => {
@@ -145,9 +146,9 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
         content: `A${i + 1} (${audio.toFixed(2)}s)`,
         editable: false,
         selectable: false,
-        start: this.indexToDate(i),
-        end: this.indexToDate(i + 1),
-        group: 2,
+        start: indexToDate(i),
+        end: indexToDate(i + 1),
+        group: TimelineGroup.Audio,
       });
     });
     videos.forEach((video, i) => {
@@ -155,9 +156,9 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
         id: video.id,
         content: `${video.file?.name || '?'}`,
         editable: { updateTime: true, remove: true, updateGroup: false },
-        start: this.indexToDate(video.startIndex),
-        end: this.indexToDate(video.endIndex),
-        group: 1,
+        start: indexToDate(video.startIndex),
+        end: indexToDate(video.endIndex),
+        group: TimelineGroup.Video,
       });
     });
     return {
@@ -186,14 +187,14 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
           date.setMilliseconds(0);
           return date;
         },
-        min: this.indexToDate(0),
-        max: this.indexToDate(onsetLengths.length),
+        min: indexToDate(0),
+        max: indexToDate(onsetLengths.length),
         showMajorLabels: false,
         showMinorLabels: false,
         onAdd: (item) => this.onAddItem(item, onsetLengths),
         onRemove: (item) => this.onRemoveItem(item),
-        onMove: (item) => this.onUpdateItem(item, onsetLengths),
-        onUpdate: (item) => this.onUpdateItem(item, onsetLengths),
+        onMove: (item) => this.onUpdateItem(item),
+        onUpdate: (item) => this.onUpdateItem(item),
       }
     );
 
@@ -206,16 +207,12 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   }
 
   private onAddItem(item: TimelineItem, onsetLengths: number[]) {
-    if (item.group === 1) {
-      const video: Video = {
-        ...this.getVideoPatch(
-          item.start as Date,
-          moment(item.start).add(1, 'second').toDate(),
-          onsetLengths
-        ),
-        id: uuid(),
-        trimStart: 0,
-      };
+    if (item.group === TimelineGroup.Video) {
+      const video: Video = new VideoImpl(
+        dateToIndex(item.start as Date),
+        dateToIndex(moment(item.start).add(1, 'second').toDate()),
+        onsetLengths
+      );
       console.info('adding video item', item, video);
       this.videoAdded.emit(video);
     } else if (item.group === 2) {
@@ -224,55 +221,21 @@ export class TimelineComponent implements AfterContentInit, OnDestroy {
   }
 
   private onRemoveItem(item: TimelineItem) {
-    if (item.group === 1) {
+    if (item.group === TimelineGroup.Video) {
       console.info('removing video item', item);
       this.videoRemoved.emit(item.id as string);
     }
   }
 
-  private onUpdateItem(item: TimelineItem, onsetLengths: number[]) {
+  private onUpdateItem(item: TimelineItem) {
     if (item.group === 1) {
-      const video: Partial<Video> = {
-        ...this.getVideoPatch(
-          item.start as Date,
-          item.end as Date,
-          onsetLengths
-        ),
-        id: item.id as string,
-      };
-      console.info('updating video item', item, video);
-      this.videoUpdated.emit(video);
+      const event: [string, number, number] = [
+        item.id as string,
+        dateToIndex(item.start as Date),
+        dateToIndex(item.end as Date),
+      ];
+      console.info('updating video item', item, event);
+      this.videoUpdated.emit(event);
     }
-  }
-
-  private getVideoPatch(start: Date, end: Date, onsetLengths: number[]) {
-    const startIndex = this.dateToIndex(start);
-    const endIndex = this.dateToIndex(end);
-    const startTime = this.indexToTime(startIndex, onsetLengths);
-    const endTime = this.indexToTime(endIndex, onsetLengths);
-    const duration = endTime - startTime;
-    return {
-      ...{ startIndex },
-      ...{ startTime },
-      ...{ endIndex },
-      ...{ endTime },
-      ...{ duration },
-    };
-  }
-
-  private indexToDate(index: number): Date {
-    return moment(this.dateRef).add(index, 'seconds').toDate();
-  }
-
-  private dateToIndex(date: Date): number {
-    return moment(date).diff(this.dateRef) / 1000;
-  }
-
-  private indexToTime(index: number, onsetLengths: number[]): number {
-    let time = 0;
-    for (let i = 0; i <= index; i++) {
-      time += onsetLengths[i - 1] || 0;
-    }
-    return time;
   }
 }

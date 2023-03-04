@@ -13,7 +13,7 @@
     <video
       #player
       controls
-      [src]="video.safeUrl"
+      [src]="src$ | async"
       (loadeddata)="jumpToTrimStart(video).subscribe()"
       (keydown.\)="trimStart(player.currentTime).subscribe()"
       (keydown.[)="jumpToTrimStart(video).subscribe()"

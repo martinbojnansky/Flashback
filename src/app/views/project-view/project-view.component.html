@@ -34,7 +34,7 @@
       [selectedVideo]="(selectedVideo$ | async)?.id || null"
       (videoAdded)="addVideo($event).subscribe()"
       (videoRemoved)="removeVideo($event).subscribe()"
-      (videoUpdated)="updateVideo($event).subscribe()"
+      (videoUpdated)="updateVideoPosition($event).subscribe()"
       (itemSelected)="selectVideo($event).subscribe()"
     ></app-timeline>
     <ng-template #noAudioTemplate>
