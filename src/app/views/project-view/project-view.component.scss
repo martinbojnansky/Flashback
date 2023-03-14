@@ -6,7 +6,6 @@
   box-sizing: border-box;
   padding: 0.5rem;
   height: 100%;
-  overflow: hidden;
 }
 
 .section {
@@ -18,9 +17,8 @@
   }
 
   &--center {
-    flex: 0 1 auto;
+    flex: 1 1 40vh;
     flex-direction: row;
-    flex-wrap: wrap-reverse;
 
     &-left {
       flex: 1 1 40%;
@@ -32,7 +30,7 @@
   }
 
   &--bottom {
-    flex: 1 1 auto;
+    flex: 1 1 40vh;
   }
 }
 

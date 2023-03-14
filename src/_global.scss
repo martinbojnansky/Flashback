@@ -33,6 +33,7 @@
 
 @mixin fieldsetColor($color) {
   border-color: $color;
+  border-width: 1pc;
 
   legend {
     color: $color;

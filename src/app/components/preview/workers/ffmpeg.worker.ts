@@ -19,7 +19,6 @@ export interface FfmpegWorkerGeneratePreviewResponse {
 }
 
 const ffmpeg = createFFmpeg();
-let loaded = false;
 
 ffmpeg.setLogger(({ type, message }) => {
   console.log(`%c${type} ${message}`, 'color: gray');
@@ -45,7 +44,9 @@ const next = async () => {
   const cmd = queue.shift();
   if (cmd) {
     console.info('processing next', cmd);
-    await ffmpeg.load();
+    if (!ffmpeg.isLoaded()) {
+      await ffmpeg.load();
+    }
     let res: any;
     switch (cmd.type) {
       case 'generatePreview':
@@ -72,20 +73,18 @@ const generatePreview = async (
     if (video.file) {
       ffmpeg.FS('writeFile', video.file.name, await fetchFile(video.file));
       const trimmedFileName = `${video.id}.mp4`;
+      // https://trac.ffmpeg.org/wiki/Seeking
       await ffmpeg.run(
         '-ss',
         formatTime(video.trimStart),
-        '-accurate_seek',
         '-i',
         video.file.name,
         '-t',
         formatTime(video.duration),
-        '-c:v',
-        'libx264',
-        '-c:a',
-        'aac',
         '-c',
         'copy',
+        '-avoid_negative_ts',
+        '1',
         trimmedFileName
       );
       timelineTxtText += `\nfile ${trimmedFileName}`;
