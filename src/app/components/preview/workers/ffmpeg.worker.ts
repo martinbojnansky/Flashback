@@ -72,6 +72,7 @@ const generatePreview = async (
   for (let video of cmd.videos) {
     if (video.file) {
       ffmpeg.FS('writeFile', video.file.name, await fetchFile(video.file));
+      const preTrimmedFileName = `_${video.id}.mp4`;
       const trimmedFileName = `${video.id}.mp4`;
       // https://trac.ffmpeg.org/wiki/Seeking
       await ffmpeg.run(
@@ -85,8 +86,18 @@ const generatePreview = async (
         'copy',
         '-avoid_negative_ts',
         '1',
+        preTrimmedFileName
+      );
+      await ffmpeg.run(
+        '-i',
+        preTrimmedFileName,
+        '-t',
+        formatTime(video.duration),
+        '-c',
+        'copy',
         trimmedFileName
       );
+      ffmpeg.FS('unlink', preTrimmedFileName);
       timelineTxtText += `\nfile ${trimmedFileName}`;
     } else {
       // TODO: Generate black screen
