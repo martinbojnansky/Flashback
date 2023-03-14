@@ -6,47 +6,48 @@ import { from, map, Observable, tap } from 'rxjs';
   providedIn: 'root',
 })
 export class OnsetsService {
-  private audioCtx: AudioContext;
-  private audioWorker: Worker;
-
-  constructor() {
-    this.audioCtx = new (window.AudioContext ||
-      (window as any).webkitAudioContext)();
-
-    this.audioWorker = new Worker(
-      new URL('../workers/onsets-audio.worker', import.meta.url)
-    );
-  }
+  constructor() {}
 
   analyzeFile(file: File): Observable<number[]> {
     return from(this.split(file)).pipe(
       map((res) => this.measureSlices(res)),
-      tap((onsets) => console.info('onsets analyzed', onsets))
+      tap((onsets) => {
+        console.info('onsets analyzed', onsets);
+      })
     );
   }
 
   private async split(file: File) {
+    const audioCtx: AudioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
+    const audioWorker: Worker = new Worker(
+      new URL('../workers/onsets-audio.worker', import.meta.url)
+    );
+
     const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await this.decodeBuffer(arrayBuffer);
+    const audioBuffer = await this.decodeBuffer(audioCtx, arrayBuffer);
     const audioArray = audioBuffer.getChannelData(0);
     const audioSampleRate =
-      audioBuffer.sampleRate || this.audioCtx.sampleRate || 44100;
+      audioBuffer.sampleRate || audioCtx.sampleRate || 44100;
 
     const promise = new Promise<{
       sampleRate: number;
       slices: any[];
     }>((resolve) => {
-      this.audioWorker.onmessage = async (msg) => {
+      audioWorker.onmessage = async (msg) => {
         if (msg.data.onsets?.length) {
           resolve({
             sampleRate: audioSampleRate,
             slices: msg.data.slices,
           });
+          audioCtx.close().then(() => console.info('audio ctx closed'));
+          audioWorker.terminate();
+          console.info('audio worker terminated');
         }
       };
     });
 
-    this.audioWorker.postMessage({
+    audioWorker.postMessage({
       request: 'initParams',
       params: {
         sampleRate: audioSampleRate,
@@ -57,7 +58,7 @@ export class OnsetsService {
         sensitivity: 0.65,
       },
     });
-    this.audioWorker.postMessage({
+    audioWorker.postMessage({
       request: 'analyze',
       audio: audioArray,
     });
@@ -72,9 +73,12 @@ export class OnsetsService {
     return result.slices.map((slice) => slice.length / result.sampleRate);
   }
 
-  private async decodeBuffer(arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
+  private async decodeBuffer(
+    audioCtx: AudioContext,
+    arrayBuffer: ArrayBuffer
+  ): Promise<AudioBuffer> {
     return new Promise<AudioBuffer>((resolve, reject) => {
-      this.audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
+      audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
     });
   }
 }
