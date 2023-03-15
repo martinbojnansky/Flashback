@@ -59,4 +59,10 @@ export class VideoImpl implements Video {
     this.trimStart = start;
     return this;
   }
+
+  clone() {
+    const clone = Object.assign({}, this);
+    Object.setPrototypeOf(clone, VideoImpl.prototype);
+    return clone;
+  }
 }

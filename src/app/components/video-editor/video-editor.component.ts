@@ -38,7 +38,10 @@ export class VideoEditorComponent implements OnDestroy {
   }
 
   @Output()
-  readonly videoChanged = new EventEmitter<Video>();
+  readonly videoPicked = new EventEmitter<[string, File]>();
+
+  @Output()
+  readonly videoTrimmed = new EventEmitter<[string, number]>();
 
   @ViewChild('player')
   set player(value: ElementRef<HTMLVideoElement> | null) {
@@ -77,9 +80,8 @@ export class VideoEditorComponent implements OnDestroy {
           .files?.[0];
 
         if (file) {
-          video.updateFile(file);
-          console.info('video file updated', video);
-          this.videoChanged.emit(video);
+          console.info('video file picked', video.id, file);
+          this.videoPicked.emit([video.id, file]);
         }
       }),
       takeUntil(this.destroyed$)
@@ -95,9 +97,8 @@ export class VideoEditorComponent implements OnDestroy {
         }
         player.nativeElement.pause();
         player.nativeElement.currentTime = start;
-        const trimmedVideo = video.trim(start);
-        console.info('video start trimmed', trimmedVideo);
-        this.videoChanged.emit(trimmedVideo);
+        console.info('video start trimmed', video.id, start);
+        this.videoTrimmed.emit([video.id, start]);
       }),
       takeUntil(this.destroyed$)
     );

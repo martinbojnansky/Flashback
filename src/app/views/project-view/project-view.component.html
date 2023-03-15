@@ -11,7 +11,8 @@
       <legend>Editor</legend>
       <app-video-editor
         [video]="selectedVideo$ | async"
-        (videoChanged)="updateVideo($event).subscribe()"
+        (videoPicked)="pickVideo($event).subscribe()"
+        (videoTrimmed)="trimVideo($event).subscribe()"
       ></app-video-editor>
     </fieldset>
   </section>
@@ -19,10 +20,7 @@
     <!-- preview -->
     <fieldset class="fieldset--preview">
       <legend>Preview</legend>
-      <app-preview
-        [audio]="audioFile$ | async"
-        [videos]="videos$ | async"
-      ></app-preview>
+      <app-preview [url]="previewUrl$ | async"></app-preview>
     </fieldset>
   </section>
 </section>
@@ -42,8 +40,8 @@
     ></app-timeline>
     <ng-template #noAudioTemplate>
       <app-audio-picker
-        (picked)="audioFile$.next($event)"
-        (analyzed)="updateOnsetLengths($event)"
+        (picked)="pickAudio($event)"
+        (analyzed)="analyzeAudio($event)"
       ></app-audio-picker>
     </ng-template>
   </fieldset>

@@ -6,6 +6,7 @@ import { PreviewComponent } from 'src/app/components/preview/preview.component';
 import { TimelineComponent } from 'src/app/components/timeline/timeline.component';
 import { VideoEditorComponent } from 'src/app/components/video-editor/video-editor.component';
 import { Video } from 'src/app/models/video';
+import { FfmpegService } from 'src/app/services/ffmpeg.service';
 
 @Component({
   selector: 'app-project-view',
@@ -19,9 +20,9 @@ import { Video } from 'src/app/models/video';
     TimelineComponent,
     PreviewComponent,
   ],
+  providers: [FfmpegService],
 })
 export class ProjectViewComponent implements OnDestroy {
-  readonly audioFile$ = new BehaviorSubject<File | null>(null);
   readonly onsetsLengths$ = new BehaviorSubject<number[]>([
     // 1.0346666666666666, 1.0453333333333332, 2.08, 1.056, 1.0346666666666666,
     // 2.037333333333333, 0.032, 1.0666666666666667, 1.0132291666666666,
@@ -29,23 +30,34 @@ export class ProjectViewComponent implements OnDestroy {
 
   readonly videos$ = new BehaviorSubject<Video[]>([]);
   readonly selectedVideo$ = new BehaviorSubject<Video | null>(null);
+  readonly previewUrl$ = this.ffmpegService.previewUrl$;
 
   private readonly destroyed$ = new Subject<boolean>();
 
-  constructor() {}
+  constructor(protected ffmpegService: FfmpegService) {}
 
   ngOnDestroy(): void {
     this.destroyed$.next(true);
   }
 
-  updateOnsetLengths(onsetLenghts: number[]) {
+  pickAudio(file: File | null) {
+    if (file) {
+      this.ffmpegService.saveAudio(file);
+    }
+  }
+
+  analyzeAudio(onsetLenghts: number[]) {
     this.onsetsLengths$.next(onsetLenghts);
   }
 
   addVideo(video: Video) {
     return this.videos$.pipe(
       take(1),
-      tap((videos) => this.videos$.next([...videos, video])),
+      tap((videos) => {
+        videos.push(video);
+        this.videos$.next([...videos]);
+        this.ffmpegService.buildTimeline(videos);
+      }),
       takeUntil(this.destroyed$)
     );
   }
@@ -57,19 +69,38 @@ export class ProjectViewComponent implements OnDestroy {
         const index = videos.findIndex((v) => v.id === id);
         videos.splice(index, 1);
         this.videos$.next([...videos]);
+        this.ffmpegService.buildTimeline(videos);
+        // TODO: Unlink video.id.mp4
+        // TODO: Unlink vide.file.name.mp4 if not used in other videos
       }),
       takeUntil(this.destroyed$)
     );
   }
 
-  updateVideo(video: Video) {
+  pickVideo(event: [string, File]) {
     return this.videos$.pipe(
       take(1),
       tap((videos) => {
-        const index = videos.findIndex((v) => v.id === video.id);
-        const updatedVideo = (videos[index] = video);
+        const index = videos.findIndex((v) => v.id === event[0]);
+        const updatedVideo = videos[index].updateFile(event[1]);
         this.videos$.next([...videos]);
         this.selectedVideo$.next(updatedVideo);
+        this.ffmpegService.saveVideo(updatedVideo);
+        this.ffmpegService.trimVideo(updatedVideo);
+      }),
+      takeUntil(this.destroyed$)
+    );
+  }
+
+  trimVideo(event: [string, number]) {
+    return this.videos$.pipe(
+      take(1),
+      tap((videos) => {
+        const index = videos.findIndex((v) => v.id === event[0]);
+        const updatedVideo = videos[index].trim(event[1]);
+        this.videos$.next([...videos]);
+        this.selectedVideo$.next(updatedVideo);
+        this.ffmpegService.trimVideo(updatedVideo);
       }),
       takeUntil(this.destroyed$)
     );
@@ -83,6 +114,8 @@ export class ProjectViewComponent implements OnDestroy {
         const updatedVideo = videos[index].updatePosition(event[1], event[2]);
         this.videos$.next([...videos]);
         this.selectedVideo$.next(updatedVideo);
+        this.ffmpegService.buildTimeline(videos);
+        this.ffmpegService.trimVideo(updatedVideo);
       }),
       takeUntil(this.destroyed$)
     );
