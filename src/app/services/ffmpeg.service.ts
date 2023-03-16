@@ -33,6 +33,9 @@ export class FfmpegService {
           break;
         case 'generatePreview':
           this.updatePreviewRequired = false;
+          if (this.previewUrl$.value) {
+            URL.revokeObjectURL(this.previewUrl$.value);
+          }
           const url = (response as FfmpegWorkerResponse<'generatePreview'>)
             .payload;
           this.previewUrl$.next(url || null);
