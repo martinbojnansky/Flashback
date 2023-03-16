@@ -23,10 +23,7 @@ import { FfmpegService } from 'src/app/services/ffmpeg.service';
   providers: [FfmpegService],
 })
 export class ProjectViewComponent implements OnDestroy {
-  readonly onsetsLengths$ = new BehaviorSubject<number[]>([
-    // 1.0346666666666666, 1.0453333333333332, 2.08, 1.056, 1.0346666666666666,
-    // 2.037333333333333, 0.032, 1.0666666666666667, 1.0132291666666666,
-  ]);
+  readonly onsetsLengths$ = new BehaviorSubject<number[]>([]);
 
   readonly videos$ = new BehaviorSubject<Video[]>([]);
   readonly selectedVideo$ = new BehaviorSubject<Video | null>(null);
@@ -67,11 +64,13 @@ export class ProjectViewComponent implements OnDestroy {
       take(1),
       tap((videos) => {
         const index = videos.findIndex((v) => v.id === id);
-        videos.splice(index, 1);
+        const deletedVideo = videos.splice(index, 1)?.[0];
         this.videos$.next([...videos]);
         this.ffmpegService.buildTimeline(videos);
-        // TODO: Unlink video.id.mp4
-        // TODO: Unlink vide.file.name.mp4 if not used in other videos
+        this.ffmpegService.deleteVideo(
+          deletedVideo,
+          !videos.some((v) => v.file?.name === deletedVideo.file?.name)
+        );
       }),
       takeUntil(this.destroyed$)
     );

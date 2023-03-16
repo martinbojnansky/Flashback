@@ -21,7 +21,7 @@ export class PreviewComponent {
   private readonly url$ = new BehaviorSubject<string | null>(null);
 
   readonly src$: Observable<SafeUrl | null> = this.url$.pipe(
-    map((url) => (url ? this.sanitizer.bypassSecurityTrustUrl(url) : ''))
+    map((url) => (url ? this.sanitizer.bypassSecurityTrustUrl(url) : null))
   );
 
   constructor(

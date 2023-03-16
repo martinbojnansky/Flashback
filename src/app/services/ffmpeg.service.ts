@@ -29,6 +29,7 @@ export class FfmpegService {
           this.generatePreview();
           break;
         case 'trimVideo':
+        case 'deleteVideo':
           this.updatePreviewRequired = true;
           break;
         case 'generatePreview':
@@ -54,6 +55,10 @@ export class FfmpegService {
 
   trimVideo(video: Video) {
     this.cmd('trimVideo', video);
+  }
+
+  deleteVideo(video: Video, deleteSourceFile: boolean) {
+    this.cmd('deleteVideo', { ...{ video }, ...{ deleteSourceFile } });
   }
 
   buildTimeline(videos: Video[]) {

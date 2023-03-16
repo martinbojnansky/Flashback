@@ -3,24 +3,28 @@
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 import * as moment from 'moment';
 import { Video } from 'src/app/models/video';
+import { environment } from 'src/environments/environment';
 
 export interface FfmpegWorkerCommands {
   saveAudio: [File, {}];
   saveVideo: [Video, {}];
   trimVideo: [Video, {}];
+  deleteVideo: [{ video: Video; deleteSourceFile: boolean }, {}];
   buildTimeline: [Video[], {}];
   generatePreview: [{}, string | undefined];
   _idle: [void, {}];
 }
 
 export interface FfmpegWorkerCommand<
-  T extends keyof FfmpegWorkerCommands = any
+  T extends keyof FfmpegWorkerCommands = keyof FfmpegWorkerCommands
 > {
   type: T;
   payload: FfmpegWorkerCommands[T][0];
 }
 
-export type FfmpegWorkerResponse<T extends keyof FfmpegWorkerCommands = any> = {
+export type FfmpegWorkerResponse<
+  T extends keyof FfmpegWorkerCommands = keyof FfmpegWorkerCommands
+> = {
   type: T;
   payload: FfmpegWorkerCommands[T][1];
 };
@@ -28,14 +32,18 @@ export type FfmpegWorkerResponse<T extends keyof FfmpegWorkerCommands = any> = {
 const ffmpeg = createFFmpeg();
 
 ffmpeg.setLogger(({ type, message }) => {
-  console.log(`%c${type} ${message}`, 'color: gray');
+  if (environment.ffmpeg.log) {
+    console.log(`%c${type} ${message}`, 'color: gray');
+  }
 });
 
 ffmpeg.setProgress(({ ratio }) => {
-  console.log(
-    `%c[ffmpeg.progress] ${((ratio || 0) * 100).toFixed(0)}%`,
-    'color: gray'
-  );
+  if (environment.ffmpeg.log) {
+    console.log(
+      `%c[ffmpeg.progress] ${((ratio || 0) * 100).toFixed(0)}%`,
+      'color: gray'
+    );
+  }
 });
 
 const queue: FfmpegWorkerCommand[] = [];
@@ -59,25 +67,31 @@ const next = async () => {
     let res: any;
     switch (cmd.type) {
       case 'saveAudio':
-        res = await saveAudio(cmd);
+        res = await saveAudio(cmd as FfmpegWorkerCommand<'saveAudio'>);
         break;
       case 'saveVideo':
-        res = await saveVideo(cmd);
+        res = await saveVideo(cmd as FfmpegWorkerCommand<'saveVideo'>);
         break;
       case 'trimVideo':
-        res = await trimVideo(cmd);
+        res = await trimVideo(cmd as FfmpegWorkerCommand<'trimVideo'>);
         break;
       case 'buildTimeline':
-        res = await buildTimeline(cmd);
+        res = await buildTimeline(cmd as FfmpegWorkerCommand<'buildTimeline'>);
         break;
       case 'generatePreview':
-        res = await generatePreview(cmd);
+        res = await generatePreview(
+          cmd as FfmpegWorkerCommand<'generatePreview'>
+        );
+        break;
+      case 'deleteVideo':
+        res = deleteVideo(cmd as FfmpegWorkerCommand<'deleteVideo'>);
         break;
       default:
         console.error('unknown command received', cmd);
         break;
     }
     postMessage(res);
+    console.info('processed', cmd);
     await next();
   } else {
     idle = true;
@@ -187,12 +201,28 @@ const trimVideo = async (
     // Unlink trimmed files
     ffmpeg.FS('unlink', trimmedVideoFileName);
     ffmpeg.FS('unlink', trimmedAudioFileName);
-  } else {
-    // TODO: Generate black screen
   }
 
   return {
     type: 'trimVideo',
+    payload: {},
+  };
+};
+
+const deleteVideo = (
+  cmd: FfmpegWorkerCommand<'deleteVideo'>
+): FfmpegWorkerResponse<'deleteVideo'> => {
+  ffmpeg.FS('unlink', `${cmd.payload.video.id}.mp4`);
+  if (cmd.payload.deleteSourceFile && cmd.payload.video.file) {
+    ffmpeg.FS('unlink', cmd.payload.video.file?.name);
+  }
+  console.info(
+    `deleted video ${cmd.payload.video.id}.mp4 ${
+      cmd.payload.deleteSourceFile ? 'and its' : 'but not its'
+    } source file ${cmd.payload.video.file?.name}.`
+  );
+  return {
+    type: 'deleteVideo',
     payload: {},
   };
 };

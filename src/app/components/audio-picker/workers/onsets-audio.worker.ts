@@ -1,23 +1,26 @@
 /// <reference lib="webworker" />
 
 const log = (...params: any[]) => {
-  console.info(
-    ...params.flatMap((param) => {
-      switch (typeof param) {
-        case 'object':
-        case 'function':
-          return [param];
-        default:
-          return [`%c${param}`, 'color: grey'];
-      }
-    })
-  );
+  if (environment.essentia.log) {
+    console.info(
+      ...params.flatMap((param) => {
+        switch (typeof param) {
+          case 'object':
+          case 'function':
+            return [param];
+          default:
+            return [`%c${param}`, 'color: grey'];
+        }
+      })
+    );
+  }
 };
 
 log('loading essentia.wasm');
 
 // @ts-ignore
 import { Essentia, EssentiaWASM } from 'essentia.js';
+import { environment } from 'src/environments/environment';
 // @ts-ignore
 import { PolarFFTWASM } from '../lib/polarFFT.module.js';
 // @ts-ignore
