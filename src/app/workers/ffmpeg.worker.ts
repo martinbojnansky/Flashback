@@ -39,15 +39,17 @@ ffmpeg.setProgress(({ ratio }) => {
 });
 
 const queue: FfmpegWorkerCommand[] = [];
+let idle: boolean = true;
 
 addEventListener('message', async (message: { data: FfmpegWorkerCommand }) => {
   queue.push(message.data);
-  if (queue.length === 1) {
+  if (idle) {
     await next();
   }
 });
 
 const next = async () => {
+  idle = false;
   const cmd = queue.shift();
   if (cmd) {
     console.info('processing next', cmd);
@@ -78,6 +80,7 @@ const next = async () => {
     postMessage(res);
     await next();
   } else {
+    idle = true;
     console.info('idle, nothing else to process');
     postMessage(<FfmpegWorkerResponse<'_idle'>>{
       type: '_idle',
