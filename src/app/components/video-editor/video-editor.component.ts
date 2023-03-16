@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   EventEmitter,
@@ -27,7 +26,6 @@ import { Video } from 'src/app/models/video';
   selector: 'app-video-editor',
   templateUrl: './video-editor.component.html',
   styleUrls: ['./video-editor.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
 })
