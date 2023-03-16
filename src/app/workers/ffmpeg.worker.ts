@@ -120,10 +120,8 @@ const trimVideo = async (
   const video: Video = cmd.payload;
 
   if (video.file) {
-    const preTrimmedFileName = `temp_${video.id}.mp4`;
-    const trimmedFileName = `${video.id}.mp4`;
-
     // Pre-trim using key-frame matching to avoid lagging
+    const preTrimmedVideoFileName = `pre-trimmed_${video.id}.mp4`;
     await ffmpeg.run(
       '-ss',
       formatTime(video.trimStart),
@@ -135,22 +133,57 @@ const trimVideo = async (
       'copy',
       '-avoid_negative_ts',
       '1',
-      preTrimmedFileName
+      preTrimmedVideoFileName
     );
 
-    // Trim one more time to get exact length
+    // Trim one more time to get exact length of the video
+    const trimmedVideoFileName = `trimmed_${video.id}.mp4`;
     await ffmpeg.run(
       '-i',
-      preTrimmedFileName,
+      preTrimmedVideoFileName,
       '-t',
       formatTime(video.duration),
       '-c',
       'copy',
-      trimmedFileName
+      trimmedVideoFileName
     );
 
-    // Unlink temporary pre-trimmed file.
-    ffmpeg.FS('unlink', preTrimmedFileName);
+    // Unlink temporary pre-trimmed video file.
+    ffmpeg.FS('unlink', preTrimmedVideoFileName);
+
+    // Trim audio
+    const trimmedAudioFileName = `audio_${video.id}.mp3`;
+    await ffmpeg.run(
+      '-i',
+      'audio.mp3',
+      '-ss',
+      formatTime(video.startTime),
+      '-t',
+      formatTime(video.duration),
+      '-c',
+      'copy',
+      trimmedAudioFileName
+    );
+
+    // Add trimmed audio to trimmed video
+    const videoFileName = `${video.id}.mp4`;
+    await ffmpeg.run(
+      '-i',
+      trimmedVideoFileName,
+      '-i',
+      trimmedAudioFileName,
+      '-map',
+      '0:v:0',
+      '-map',
+      '1:a:0',
+      '-c',
+      'copy',
+      videoFileName
+    );
+
+    // Unlink trimmed files
+    ffmpeg.FS('unlink', trimmedVideoFileName);
+    ffmpeg.FS('unlink', trimmedAudioFileName);
   } else {
     // TODO: Generate black screen
   }
@@ -179,11 +212,8 @@ const buildTimeline = async (
 const generatePreview = async (
   cmd: FfmpegWorkerCommand<'generatePreview'>
 ): Promise<FfmpegWorkerResponse<'generatePreview'>> => {
+  // Merge all videos into preview
   const previewFileName = 'preview.mp4';
-  // Unlink previous
-
-  // Merge all videos
-  const mergedVideosFileName = 'merged.mp4';
   await ffmpeg.run(
     '-f',
     'concat',
@@ -193,28 +223,10 @@ const generatePreview = async (
     'timeline.txt',
     '-c',
     'copy',
-    mergedVideosFileName
-  );
-
-  // Add audio to merged videos
-  await ffmpeg.run(
-    '-i',
-    mergedVideosFileName,
-    '-i',
-    'audio.mp3',
-    '-map',
-    '0:v:0',
-    '-map',
-    '1:a:0',
-    '-c',
-    'copy',
     previewFileName
   );
 
-  // Unlink temporary file with merged videos
-  ffmpeg.FS('unlink', mergedVideosFileName);
-
-  // Try to read preview
+  // Try to read generated preview
   let url: string | undefined = undefined;
   try {
     const previewFile = ffmpeg.FS('readFile', previewFileName);
